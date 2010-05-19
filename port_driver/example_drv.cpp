@@ -15,10 +15,22 @@ OIS::Keyboard* keyboard;
 OIS::Mouse*     mouse;
 Real timeDelta;
 Real timeStep;
+OIS::InputManager* inputManager;
 
-bool GameStep() {
-    if (keyboard->isKeyDown(OIS::KC_ESCAPE)) return false;
-    return true;
+int is_key_down(int key) {
+    if (keyboard->isKeyDown((OIS::KeyCode)key)) return 1;
+    return 0;
+}
+float get_timer(void) {
+    return (float)root->getTimer()->getMilliseconds();
+}
+
+void input_capture(void) {
+    keyboard->capture();
+    mouse->capture();
+}
+void render_frame(void) {
+    root->renderOneFrame();
 }
 
 void init_ogre(void) {
@@ -63,7 +75,7 @@ void init_ogre(void) {
     windowHndStr << windowHnd;
     pl.insert(std::make_pair(std::string("WINDOW"), windowHndStr.str()));
 
-    OIS::InputManager* inputManager = OIS::InputManager::createInputSystem(pl);
+    inputManager = OIS::InputManager::createInputSystem(pl);
     keyboard = static_cast<OIS::Keyboard*>(inputManager->createInputObject(OIS::OISKeyboard, true));
     mouse = static_cast<OIS::Mouse*>(inputManager->createInputObject(OIS::OISMouse, true));
 
@@ -71,28 +83,11 @@ void init_ogre(void) {
     int top, left;
     window->getMetrics(width, height, depth, left, top);
     const OIS::MouseState &ms = mouse->getMouseState(); ms.width = width; ms.height = height;
-
-    bool stop = false;
-    Real lastTime = root->getTimer()->getMilliseconds();
-
-    while (!stop) {
-        keyboard->capture();
-        mouse->capture();
-
-        Real currTime = root->getTimer()->getMilliseconds();
-
-        timeDelta = currTime - lastTime;
-
-        if (!GameStep()) stop = true;
-        root->renderOneFrame();
-
-        lastTime = currTime;
-    }
-
+}
+void destroy_ogre(void) {
     inputManager->destroyInputObject(mouse); mouse = 0;
     inputManager->destroyInputObject(keyboard); keyboard = 0;
     OIS::InputManager::destroyInputSystem(inputManager); inputManager = 0;
-
     delete root;
 }
 
@@ -115,13 +110,33 @@ static void process(ErlDrvData handle, ErlIOVec *ev) {
   example_data* driver_data = (example_data*) handle;
   ErlDrvBinary* data = ev->binv[1];
 
-  init_ogre();
 
-  ErlDrvTermData spec[] = {ERL_DRV_ATOM, driver_mk_atom("ok")};
+  ErlDrvTermData ok_spec[] = {ERL_DRV_ATOM, driver_mk_atom("ok")};
 
+  printf("here %d\n",data->orig_bytes[0]);
+  switch (data->orig_bytes[0]) {
+      case 1:
+           init_ogre(); 
+           break;
+      case 2:
+           destroy_ogre();
+           break;
+      case 3:
+           render_frame();
+           break;
+      case 4:
+           input_capture();
+           break;
+      case 5:
+           int key = data->orig_bytes[1];
+           int down = is_key_down(key);
+           ErlDrvTermData spec[] = {ERL_DRV_INT, down};
+           driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+           return;
+  }
 
   printf("got here\n");
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  driver_output_term(driver_data->port, ok_spec, sizeof(ok_spec) / sizeof(ok_spec[0]));
   printf("got here too\n");
 }
 

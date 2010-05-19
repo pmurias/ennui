@@ -1,6 +1,6 @@
 -module(port_driver).
 -export([start/1, stop/0, init/1]).
--export([foo/1, bar/1]).
+-export([init_ogre/0, destroy_ogre/0,render_frame/0,capture_input/0,key_down/1]).
 start(SharedLib) ->
     case erl_ddll:load(".", SharedLib) of
 	ok -> ok;
@@ -14,10 +14,18 @@ init(SharedLib) ->
     loop(Port).
 stop() ->
     complex ! stop.
-foo(X) ->
-    call_port({foo, X}).
-bar(Y) ->
-    call_port({bar, Y}).
+
+init_ogre() ->
+    call_port(<<1/little>>).
+destroy_ogre() ->
+    call_port(<<2/little>>).
+render_frame() ->
+    call_port(<<3/little>>).
+capture_input() ->
+    call_port(<<4/little>>).
+key_down(Key) ->
+    call_port(<<5/little,Key/little>>).
+
 call_port(Msg) ->
     complex ! {call, self(), Msg},
     error_logger:info_msg("waiting for result~n"),
@@ -29,7 +37,7 @@ call_port(Msg) ->
 loop(Port) ->
     receive
 	{call, Caller, Msg} ->
-            port_command(Port,<<"a">>),
+            port_command(Port,Msg),
 	    receive
 		Data ->
 		    Caller ! {complex, Data}
