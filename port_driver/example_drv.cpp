@@ -99,41 +99,53 @@ void init_ogre(void) {
 typedef struct {
     ErlDrvPort port;
 } example_data;
-static ErlDrvData example_drv_start(ErlDrvPort port, char *buff)
+
+static ErlDrvData start(ErlDrvPort port, char *buff)
 {
     example_data* d = (example_data*)driver_alloc(sizeof(example_data));
     d->port = port;
     return (ErlDrvData)d;
 }
-static void example_drv_stop(ErlDrvData handle)
+static void stop(ErlDrvData handle)
 {
     driver_free((char*)handle);
 }
-static void example_drv_output(ErlDrvData handle, char *buff, int bufflen)
-{
-    example_data* d = (example_data*)handle;
-    char fn = buff[0], arg = buff[1], res;
-    if (fn == 1) {
-      res = 100;
-      printf("foo()\n");
-      init_ogre();
-    } else if (fn == 2) {
-      printf("bar()\n");
-    }
-    driver_output(d->port, &res, 1);
+
+static void process(ErlDrvData handle, ErlIOVec *ev) {
+  example_data* driver_data = (example_data*) handle;
+  ErlDrvBinary* data = ev->binv[1];
+
+  init_ogre();
+
+  ErlDrvTermData spec[] = {ERL_DRV_ATOM, driver_mk_atom("ok")};
+
+
+  printf("got here\n");
+  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  printf("got here too\n");
 }
-ErlDrvEntry example_driver_entry = {
-    NULL,			/* F_PTR init, N/A */
-    example_drv_start,		/* L_PTR start, called when port is opened */
-    example_drv_stop,		/* F_PTR stop, called when port is closed */
-    example_drv_output,		/* F_PTR output, called when erlang has sent */
-    NULL,			/* F_PTR ready_input, called when input descriptor ready */
-    NULL,			/* F_PTR ready_output, called when output descriptor ready */
-    "example_drv",		/* char *driver_name, the argument to open_port */
-    NULL,			/* F_PTR finish, called when unloaded */
-    NULL,			/* F_PTR control, port_command callback */
-    NULL,			/* F_PTR timeout, reserved */
-    NULL			/* F_PTR outputv, reserved */
+
+static ErlDrvEntry example_driver_entry = {
+    NULL, /* init */
+    start, /* startup */
+    stop, /* shutdown */
+    NULL, /* output */
+    NULL, /* ready_input */
+    NULL, /* ready_output */
+    "example_drv", /* the name of the driver */
+    NULL, /* finish */
+    NULL, /* handle */
+    NULL, /* control */
+    NULL, /* timeout */
+    process, /* process */
+    NULL, /* ready_async */
+    NULL, /* flush */
+    NULL, /* call */
+    NULL, /* event */
+    ERL_DRV_EXTENDED_MARKER, /* ERL_DRV_EXTENDED_MARKER */
+    ERL_DRV_EXTENDED_MAJOR_VERSION, /* ERL_DRV_EXTENDED_MAJOR_VERSION */
+    ERL_DRV_EXTENDED_MAJOR_VERSION, /* ERL_DRV_EXTENDED_MINOR_VERSION */
+    ERL_DRV_FLAG_USE_PORT_LOCKING /* ERL_DRV_FLAGs */
 };
 extern "C" {
 DRIVER_INIT(example_drv) /* must match name in driver_entry */
@@ -141,3 +153,4 @@ DRIVER_INIT(example_drv) /* must match name in driver_entry */
     return &example_driver_entry;
 }
 }
+

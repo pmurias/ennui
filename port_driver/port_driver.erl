@@ -2,7 +2,7 @@
 -export([start/1, stop/0, init/1]).
 -export([foo/1, bar/1]).
 start(SharedLib) ->
-    case erl_ddll:load_driver(".", SharedLib) of
+    case erl_ddll:load(".", SharedLib) of
 	ok -> ok;
 	{error, already_loaded} -> ok;
 	_ -> exit({error, could_not_load_driver})
@@ -10,7 +10,7 @@ start(SharedLib) ->
     spawn(?MODULE, init, [SharedLib]).
 init(SharedLib) ->
     register(complex, self()),
-    Port = open_port({spawn, SharedLib}, []),
+    Port = open_port({spawn, SharedLib}, [binary]),
     loop(Port).
 stop() ->
     complex ! stop.
@@ -20,17 +20,19 @@ bar(Y) ->
     call_port({bar, Y}).
 call_port(Msg) ->
     complex ! {call, self(), Msg},
+    error_logger:info_msg("waiting for result~n"),
     receive
 	{complex, Result} ->
-	    Result
+	    Result;
+        X -> error_logger:info_msg("got ~w ~n",[X])
     end.
 loop(Port) ->
     receive
 	{call, Caller, Msg} ->
-	    Port ! {self(), {command, encode(Msg)}},
+            port_command(Port,<<"a">>),
 	    receive
-		{Port, {data, Data}} ->
-		    Caller ! {complex, decode(Data)}
+		Data ->
+		    Caller ! {complex, Data}
 	    end,
 	    loop(Port);
 	stop ->
@@ -43,6 +45,3 @@ loop(Port) ->
 	    io:format("~p ~n", [Reason]),
 	    exit(port_terminated)
     end.
-encode({foo, X}) -> [1, X];
-encode({bar, Y}) -> [2, Y].
-decode([Int]) -> Int.
