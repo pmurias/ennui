@@ -1,19 +1,20 @@
--module(port_driver).
--export([start/1, stop/0, init/1]).
+-module(ogre).
+-export([load/0,run_process/1]).
 -export([init_ogre/0, destroy_ogre/0,render_frame/0,capture_input/0,key_down/1]).
-start(SharedLib) ->
-    case erl_ddll:load(".", SharedLib) of
+load() ->
+    case erl_ddll:load(".", ogre_driver) of
 	ok -> ok;
 	{error, already_loaded} -> ok;
 	_ -> exit({error, could_not_load_driver})
     end,
-    spawn(?MODULE, init, [SharedLib]).
-init(SharedLib) ->
+    spawn(?MODULE, run_process, [ogre_driver]).
+run_process(SharedLib) ->
     register(complex, self()),
     Port = open_port({spawn, SharedLib}, [binary]),
     loop(Port).
-stop() ->
-    complex ! stop.
+
+%stop() ->
+%    complex ! stop.
 
 init_ogre() ->
     call_port(<<1/little>>).

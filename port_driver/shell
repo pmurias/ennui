@@ -1,6 +1,6 @@
-c(port_driver).
-port_driver:start(example_drv).
-port_driver:init_ogre().
-port_driver:render_frame().
-port_driver:destroy_ogre().
+c(ogre).
+ogre:load().
+ogre:init_ogre().
+ogre:render_frame().
+ogre:destroy_ogre().
 

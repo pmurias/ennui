@@ -93,11 +93,11 @@ void destroy_ogre(void) {
 
 typedef struct {
     ErlDrvPort port;
-} example_data;
+} ogre_data;
 
 static ErlDrvData start(ErlDrvPort port, char *buff)
 {
-    example_data* d = (example_data*)driver_alloc(sizeof(example_data));
+    ogre_data* d = (ogre_data*)driver_alloc(sizeof(ogre_data));
     d->port = port;
     return (ErlDrvData)d;
 }
@@ -107,7 +107,7 @@ static void stop(ErlDrvData handle)
 }
 
 static void process(ErlDrvData handle, ErlIOVec *ev) {
-  example_data* driver_data = (example_data*) handle;
+  ogre_data* driver_data = (ogre_data*) handle;
   ErlDrvBinary* data = ev->binv[1];
 
 
@@ -140,14 +140,14 @@ static void process(ErlDrvData handle, ErlIOVec *ev) {
   printf("got here too\n");
 }
 
-static ErlDrvEntry example_driver_entry = {
+static ErlDrvEntry ogre_driver_entry = {
     NULL, /* init */
     start, /* startup */
     stop, /* shutdown */
     NULL, /* output */
     NULL, /* ready_input */
     NULL, /* ready_output */
-    "example_drv", /* the name of the driver */
+    "ogre_driver", /* the name of the driver */
     NULL, /* finish */
     NULL, /* handle */
     NULL, /* control */
@@ -163,9 +163,9 @@ static ErlDrvEntry example_driver_entry = {
     ERL_DRV_FLAG_USE_PORT_LOCKING /* ERL_DRV_FLAGs */
 };
 extern "C" {
-DRIVER_INIT(example_drv) /* must match name in driver_entry */
+DRIVER_INIT(ogre_driver) /* must match name in driver_entry */
 {
-    return &example_driver_entry;
+    return &ogre_driver_entry;
 }
 }
 
