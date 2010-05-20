@@ -1,0 +1,36 @@
+GRA ARCADE MULTIPLAYER
+
+---------------------------
+Gra zostanie stworzona z uzyciem silnika Ogre3D.
+
+-------- GAMEPLAY ---------
+Od góry ekranu falami nacierają przeciwnicy. Gracze zajmują pozycję u dołu ekranu,
+Gracze starają się powstrzymać falę za pomocą ataków dystansowych i kontaktowych.
+
+-------- ARCHITEKTURA ---------
+Klient - 
+    Korzysta z opakowanej jako erlangowy "linked in driver" biblioteki Ogre3D.
+    Klient przekazuje wejście użytkownika (klawiatura, myszka) innym klientom  w 
+    zależności od tego, co będzie lepiej się sprawowało w praktyce:
+    - za pośrednictwem serwera
+    - bezpośrednio do innych klientów
+
+Szczegóły komunikacji między klientami-
+    Aby uniknąć przew w działaniu gry (lag), akcje gracza typu kliknięcie myszką
+    będą opóźnione o pewien krótki okres czasu (rzędu kilkunastu ms), umożliwjający
+    wysłanie ich na czas do innych klientów.
+
+-------- TWORZENIE ---------
+Pierwsza faza tworzenia:
+    - Opakowane potrzebne funkcje Ogre,
+    - Prosta demonstracja interakcji poprzez sieć (np. dwie poruszające się
+            postacie graczy).
+
+Druga faza tworzenia:
+    - Cała mechanika gry,
+    - Assety (modele, tekstury, animacje, dźwięki, muzyka).
+
+-------- MOŻLIWE TRUDNOŚCI ---------
+- Jeśli sieciowość nie będzie wystarczająco responsywna, zamiast bezpośrednio walczyć
+    z przeciwnikami postacie gracze mogą konstruować statyczne fortyfikacje 
+    ( wieże obronne, ewentualnie mur ).
