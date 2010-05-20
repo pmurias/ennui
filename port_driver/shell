@@ -1,6 +1,4 @@
 c(ogre).
 ogre:load().
-ogre:init_ogre().
-ogre:render_frame().
-ogre:destroy_ogre().
+ogre:play().
 

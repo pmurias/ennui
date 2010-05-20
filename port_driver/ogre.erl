@@ -1,6 +1,6 @@
 -module(ogre).
 -export([load/0,run_process/1]).
--export([init_ogre/0, destroy_ogre/0,render_frame/0,capture_input/0,key_down/1]).
+-export([init_ogre/0, destroy_ogre/0,render_frame/0,capture_input/0,key_down/1,play/0]).
 load() ->
     case erl_ddll:load(".", ogre_driver) of
 	ok -> ok;
@@ -26,6 +26,19 @@ capture_input() ->
     call_port(<<4/little>>).
 key_down(Key) ->
     call_port(<<5/little,Key/little>>).
+
+play() ->
+    init_ogre(),
+    play_loop(),
+    destroy_ogre().
+play_loop () ->
+    capture_input(),
+    render_frame(),
+    Esc = key_down(1),
+    case Esc of
+        0 -> play_loop();
+        _ -> ok
+    end.
 
 call_port(Msg) ->
     complex ! {call, self(), Msg},
