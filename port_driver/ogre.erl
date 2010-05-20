@@ -26,9 +26,16 @@ capture_input() ->
     call_port(<<4/little>>).
 key_down(Key) ->
     call_port(<<5/little,Key/little>>).
+create_scenenode() ->
+    call_port(<<6/little>>).
+create_entity(Node, MeshName) ->
+    call_port(<<7/little,Node:32/little,(list_to_binary(MeshName))/binary, 0>>).
+    
 
 play() ->
     init_ogre(),
+    Node = create_scenenode(),
+    Entity = create_entity(Node, "Cube.mesh"),
     play_loop(),
     destroy_ogre().
 play_loop () ->
@@ -42,7 +49,6 @@ play_loop () ->
 
 call_port(Msg) ->
     complex ! {call, self(), Msg},
-    error_logger:info_msg("waiting for result~n"),
     receive
 	{complex, Result} ->
 	    Result;

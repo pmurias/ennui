@@ -31,6 +31,20 @@ void input_capture(void) {
 }
 void render_frame(void) {
     root->renderOneFrame();
+    window->update();
+}
+
+int create_scenenode() {
+    SceneNode *node = sceneMgr->getRootSceneNode()->createChildSceneNode();
+    return (int)(node);
+}
+
+int create_entity(int nodePtr, char *meshName) {
+    SceneNode *node = (SceneNode *)(nodePtr);
+    Entity *entity = sceneMgr->createEntity(meshName);
+    node->attachObject(entity);
+    node->setPosition(Vector3(0,0,15));
+    return (int)(entity);
 }
 
 void init_ogre(void) {
@@ -79,6 +93,14 @@ void init_ogre(void) {
     keyboard = static_cast<OIS::Keyboard*>(inputManager->createInputObject(OIS::OISKeyboard, true));
     mouse = static_cast<OIS::Mouse*>(inputManager->createInputObject(OIS::OISMouse, true));
 
+    camera->setPosition(Vector3(0,0,0));
+    camera->lookAt(Vector3(0,0,15));
+    camera->setNearClipDistance(0.1);
+    camera->setFarClipDistance(1000);
+    sceneMgr->setAmbientLight(ColourValue(1,1,1,1));
+    viewPort->setBackgroundColour(ColourValue(1,0,0));
+    camera->setAspectRatio(4.0/3.0);
+
     unsigned int width, height, depth;
     int top, left;
     window->getMetrics(width, height, depth, left, top);
@@ -107,37 +129,51 @@ static void stop(ErlDrvData handle)
 }
 
 static void process(ErlDrvData handle, ErlIOVec *ev) {
-  ogre_data* driver_data = (ogre_data*) handle;
-  ErlDrvBinary* data = ev->binv[1];
+    ogre_data* driver_data = (ogre_data*) handle;
+    ErlDrvBinary* data = ev->binv[1];
 
+    ErlDrvTermData ok_spec[] = {ERL_DRV_ATOM, driver_mk_atom("ok")};
 
-  ErlDrvTermData ok_spec[] = {ERL_DRV_ATOM, driver_mk_atom("ok")};
-
-  printf("here %d\n",data->orig_bytes[0]);
-  switch (data->orig_bytes[0]) {
-      case 1:
-           init_ogre(); 
-           break;
-      case 2:
-           destroy_ogre();
-           break;
-      case 3:
-           render_frame();
-           break;
-      case 4:
-           input_capture();
-           break;
-      case 5:
-           int key = data->orig_bytes[1];
-           int down = is_key_down(key);
-           ErlDrvTermData spec[] = {ERL_DRV_INT, down};
-           driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
-           return;
+    switch (data->orig_bytes[0]) {
+        case 1:
+            init_ogre(); 
+            break;
+        case 2:
+            destroy_ogre();
+            break;
+        case 3:
+            render_frame();
+            break;
+        case 4:
+            input_capture();
+            break;
+        case 5:
+            {
+                int key = data->orig_bytes[1];
+                int down = is_key_down(key);
+                ErlDrvTermData spec[] = {ERL_DRV_INT, down};
+                driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+            }
+            return;
+        case 6:
+            {
+                int sceneNodePtr = create_scenenode();
+                ErlDrvTermData spec[] = {ERL_DRV_INT, sceneNodePtr};
+                driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+            }
+            return;
+        case 7:
+            {
+                int nodePtr = *((int*)(data->orig_bytes+1));
+                char *meshName = (data->orig_bytes+5);
+                int entityPtr = create_entity(nodePtr, meshName);
+                ErlDrvTermData spec[] = {ERL_DRV_INT, entityPtr};
+                driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+            }
+            return;
   }
 
-  printf("got here\n");
   driver_output_term(driver_data->port, ok_spec, sizeof(ok_spec) / sizeof(ok_spec[0]));
-  printf("got here too\n");
 }
 
 static ErlDrvEntry ogre_driver_entry = {

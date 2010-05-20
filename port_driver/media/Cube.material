@@ -1,0 +1,14 @@
+material Material/SOLID/TEX/flesh.jpg
+{
+	technique
+	{
+		pass
+		{
+			specular 0.500000 0.500000 0.500000 12.500000
+			texture_unit
+			{
+				texture flesh.jpg
+			}
+		}
+	}
+}
