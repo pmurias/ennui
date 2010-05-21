@@ -19,6 +19,9 @@ Real timeDelta;
 Real timeStep;
 OIS::InputManager* inputManager;
 
+static ErlNifResourceType* node_resource;
+static ErlNifResourceType* entity_resource;
+
 static ERL_NIF_TERM hello(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     return enif_make_string(env, "Hello world!", ERL_NIF_LATIN1);
@@ -47,7 +50,7 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     /* To dziadowskie okienko mozna zastapic pozniej ustawieniami z pliku */
     if(!root->showConfigDialog()) {
         delete root;
-        return enif_make_atom(env, "error");
+        return enif_make_atom(env, "not ok");
     }
 
     window = root->initialise(true);
@@ -84,10 +87,74 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     const OIS::MouseState &ms = mouse->getMouseState(); ms.width = width; ms.height = height;
     return enif_make_atom(env, "ok");
 }
+
+static ERL_NIF_TERM capture_input(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    keyboard->capture();
+    mouse->capture();
+    return enif_make_atom(env, "ok");
+}
+static ERL_NIF_TERM render_frame(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    root->renderOneFrame();
+    window->update();
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM destroy_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    inputManager->destroyInputObject(mouse); mouse = 0;
+    inputManager->destroyInputObject(keyboard); keyboard = 0;
+    OIS::InputManager::destroyInputSystem(inputManager); inputManager = 0;
+    delete root;
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM key_down(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    int key;
+    enif_get_int(env,argv[0],&key);
+    if (keyboard->isKeyDown((OIS::KeyCode)key)) return enif_make_atom(env,"true");
+    return enif_make_atom(env,"false");
+}
+
+static ERL_NIF_TERM wrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,void* ptr) {
+    void** resource = (void**) enif_alloc_resource(env,type,sizeof(void*));
+    *resource = ptr;
+    ERL_NIF_TERM term = enif_make_resource(env,ptr);
+    enif_release_resource(env,(void*)resource);
+    return term;
+}
+static void* unwrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,ERL_NIF_TERM term) {
+    void* ptr;
+    enif_get_resource(env,term,type,&ptr);
+    return ptr;
+}
+
+static ERL_NIF_TERM create_scenenode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    return wrap_pointer(env,node_resource,(void*) sceneMgr->getRootSceneNode()->createChildSceneNode());
+}
+static ERL_NIF_TERM create_entity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char meshName[200];
+    SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
+    enif_get_atom(env,argv[1],meshName,200);
+    Entity *entity = sceneMgr->createEntity(meshName);
+    node->attachObject(entity);
+    node->setPosition(Vector3(0,0,15));
+    return wrap_pointer(env,entity_resource,(void*)entity);
+}
+
 static ErlNifFunc nif_funcs[] =
 {
-    {"init_ogre", 0, init_ogre}
+    {"init_ogre", 0, init_ogre},
+    {"capture_input", 0, capture_input},
+    {"render_frame", 0, render_frame},
+    {"destroy_ogre", 0, destroy_ogre},
+    {"key_down", 1, key_down},
+    {"create_entity", 2, create_entity},
+    {"create_scenenode", 0, create_scenenode}
 };
+static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
+    node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);
+    entity_resource = enif_open_resource_type(env,"Ogre Entity",NULL,ERL_NIF_RT_CREATE,NULL);
+    return 0;
+}
 extern "C" {
-ERL_NIF_INIT(ogre,nif_funcs,NULL,NULL,NULL,NULL)
+ERL_NIF_INIT(ogre,nif_funcs,load,NULL,NULL,NULL)
 }
