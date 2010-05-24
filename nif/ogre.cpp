@@ -117,14 +117,14 @@ static ERL_NIF_TERM key_down(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 static ERL_NIF_TERM wrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,void* ptr) {
     void** resource = (void**) enif_alloc_resource(env,type,sizeof(void*));
     *resource = ptr;
-    ERL_NIF_TERM term = enif_make_resource(env,ptr);
+    ERL_NIF_TERM term = enif_make_resource(env,resource);
     enif_release_resource(env,(void*)resource);
     return term;
 }
 static void* unwrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,ERL_NIF_TERM term) {
     void* ptr;
     enif_get_resource(env,term,type,&ptr);
-    return ptr;
+    return *((void**)ptr);
 }
 
 static ERL_NIF_TERM create_scenenode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
