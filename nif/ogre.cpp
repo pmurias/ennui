@@ -128,7 +128,8 @@ static void* unwrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,ERL_NIF_TERM
 }
 
 static ERL_NIF_TERM create_scenenode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    return wrap_pointer(env,node_resource,(void*) sceneMgr->getRootSceneNode()->createChildSceneNode());
+    void *node = (void*)(sceneMgr->getRootSceneNode()->createChildSceneNode());
+    return wrap_pointer(env,node_resource,node) ;
 }
 static ERL_NIF_TERM create_entity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char meshName[200];

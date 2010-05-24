@@ -43,8 +43,12 @@ int create_entity(int nodePtr, char *meshName) {
     SceneNode *node = (SceneNode *)(nodePtr);
     Entity *entity = sceneMgr->createEntity(meshName);
     node->attachObject(entity);
-    node->setPosition(Vector3(0,0,15));
     return (int)(entity);
+}
+
+void set_node_position(int nodePtr, float x, float y, float z) {
+    SceneNode *node = (SceneNode *)(nodePtr);
+    node->setPosition(Vector3(x,y,z));
 }
 
 void init_ogre(void) {
@@ -98,7 +102,7 @@ void init_ogre(void) {
     camera->setNearClipDistance(0.1);
     camera->setFarClipDistance(1000);
     sceneMgr->setAmbientLight(ColourValue(1,1,1,1));
-    viewPort->setBackgroundColour(ColourValue(1,0,0));
+    viewPort->setBackgroundColour(ColourValue(0.1,0,0.02));
     camera->setAspectRatio(4.0/3.0);
 
     unsigned int width, height, depth;
@@ -171,6 +175,14 @@ static void process(ErlDrvData handle, ErlIOVec *ev) {
                 driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
             }
             return;
+        case 8:
+            {
+                int nodePtr = *((int*)(data->orig_bytes+1));
+                float x = *((float *)(data->orig_bytes+5));
+                float y = *((float *)(data->orig_bytes+9));
+                float z = *((float *)(data->orig_bytes+13));
+            }
+            break;
   }
 
   driver_output_term(driver_data->port, ok_spec, sizeof(ok_spec) / sizeof(ok_spec[0]));

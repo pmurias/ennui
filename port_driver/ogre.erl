@@ -1,6 +1,6 @@
 -module(ogre).
 -export([load/0,run_process/1]).
--export([init_ogre/0, destroy_ogre/0,render_frame/0,capture_input/0,key_down/1,play/0]).
+-export([init_ogre/0, destroy_ogre/0,render_frame/0,capture_input/0,key_down/1,set_node_position/4,play/0]).
 load() ->
     case erl_ddll:load(".", ogre_driver) of
 	ok -> ok;
@@ -30,12 +30,15 @@ create_scenenode() ->
     call_port(<<6/little>>).
 create_entity(Node, MeshName) ->
     call_port(<<7/little,Node:32/little,(list_to_binary(MeshName))/binary, 0>>).
+set_node_position(Node, X, Y, Z) ->
+    call_port(<<8/little,Node:32/little,X:32/float,Y:32/float,Z:32/float>>).
     
 
 play() ->
     init_ogre(),
     Node = create_scenenode(),
     Entity = create_entity(Node, "Cube.mesh"),
+    set_node_position(Node, 0.0, 0.0, 15.0),
     play_loop(),
     destroy_ogre().
 play_loop () ->
