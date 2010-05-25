@@ -57,6 +57,14 @@ handle_input(ID,{OldLeft,OldRight,OldUp,OldDown},Clients) ->
         OldRight -> ok;
         _ -> send_to_clients(Clients, {ID,keyChange,?KC_RIGHT,Right})
     end,
+    case Up of
+        OldUp -> ok;
+        _ -> send_to_clients(Clients, {ID,keyChange,?KC_UP,Up})
+    end,
+    case Down of
+        OldDown -> ok;
+        _ -> send_to_clients(Clients, {ID,keyChange,?KC_DOWN,Down})
+    end,
     {Left,Right,Up,Down}.
 
 send_to_clients(Clients,Event) -> lists:foreach((fun(Client)->Client ! Event end), Clients).
@@ -66,18 +74,29 @@ handle_player(Player) ->
     ID = Player#player.id,
     receive
         {ID,keyChange,?KC_LEFT,State}  -> Player#player{leftDown=State};
-        {ID,keyChange,?KC_RIGHT,State} -> Player#player{rightDown=State}
+        {ID,keyChange,?KC_RIGHT,State} -> Player#player{rightDown=State};
+        {ID,keyChange,?KC_DOWN,State}  -> Player#player{downDown=State};
+        {ID,keyChange,?KC_UP,State} -> Player#player{upDown=State}
     after
         0 -> Player
     end.
 
 player_logic(Player) ->
+    Speed = 0.1,
     case Player#player.leftDown of
-        true -> move_node(Player#player.node,{0.1,0.0,0.0});
+        true -> move_node(Player#player.node,{Speed,0.0,0.0});
+        false -> ok
+    end,
+    case Player#player.upDown of
+        true -> move_node(Player#player.node,{0,Speed,0.0});
+        false -> ok
+    end,
+    case Player#player.downDown of
+        true -> move_node(Player#player.node,{0,-Speed,0.0});
         false -> ok
     end,
     case Player#player.rightDown of
-        true -> move_node(Player#player.node,{-0.1,0.0,0.0});
+        true -> move_node(Player#player.node,{-Speed,0.0,0.0});
         false -> ok
     end.
 move_node(Node,{ByX,ByY,ByZ}) -> 
