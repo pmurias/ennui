@@ -23,7 +23,7 @@ play() ->
     init_ogre(),
     Node = create_scenenode(),
     Entity = create_entity(Node, 'Cube.mesh'),
-    set_node_position(Node,0.0,0.0,10.0),
+    set_node_position(Node,0.0,0.0,25.0),
 
     play_loop([#player{id=0,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node}],{false,false,false,false}),
 
@@ -63,21 +63,21 @@ handle_player(Player) ->
         {ID,keyChange,?KC_LEFT,State}  -> Player#player{leftDown=State};
         {ID,keyChange,?KC_RIGHT,State} -> Player#player{rightDown=State}
     after
-        0 -> ok
+        0 -> Player
     end.
 
 player_logic(Player) ->
     case Player#player.leftDown of
-        true -> move_node(Player#player.node,{-0.01,0,0});
+        true -> move_node(Player#player.node,{0.01,0.0,0.0});
         false -> ok
     end,
     case Player#player.rightDown of
-        true -> move_node(Player#player.node,{0.01,0,0});
+        true -> move_node(Player#player.node,{-0.01,0.0,0.0});
         false -> ok
     end.
 move_node(Node,{ByX,ByY,ByZ}) -> 
     {X,Y,Z} = get_node_position(Node),
-    set_node_position(Node,X + ByX,Y+ByY,Y+ByZ).
+    set_node_position(Node,X + ByX,Y+ByY,Z+ByZ).
 
 play_loop (Players,InputState) ->
     capture_input(),
@@ -85,11 +85,11 @@ play_loop (Players,InputState) ->
     [Player] = Players,
 
     NewInputState = handle_input(Player#player.id,InputState),
-    handle_player(Player),
-    player_logic(Player),
+    NewPlayer = handle_player(Player),
+    player_logic(NewPlayer),
 
     Esc = key_down(?KC_ESCAPE),
     case Esc of
-        false -> play_loop(Players,NewInputState);
+        false -> play_loop([NewPlayer],NewInputState);
         true -> ok
     end.
