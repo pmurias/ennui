@@ -137,8 +137,28 @@ static ERL_NIF_TERM create_entity(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     enif_get_atom(env,argv[1],meshName,200);
     Entity *entity = sceneMgr->createEntity(meshName);
     node->attachObject(entity);
-    node->setPosition(Vector3(0,0,15));
     return wrap_pointer(env,entity_resource,(void*)entity);
+}
+
+static ERL_NIF_TERM set_node_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    double x,y,z;
+    SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
+    enif_get_double(env, argv[1], &x);
+    enif_get_double(env, argv[2], &y);
+    enif_get_double(env, argv[3], &z);
+    node->setPosition(Vector3(x,y,z));
+    return enif_make_atom(env,"ok");
+}
+
+static ERL_NIF_TERM set_node_orientation(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    double w,x,y,z;
+    SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
+    enif_get_double(env, argv[1], &x);
+    enif_get_double(env, argv[2], &x);
+    enif_get_double(env, argv[3], &y);
+    enif_get_double(env, argv[4], &z);
+    node->setOrientation(Quaternion(w,x,y,z));
+    return enif_make_atom(env,"ok");
 }
 
 static ErlNifFunc nif_funcs[] =
@@ -149,7 +169,9 @@ static ErlNifFunc nif_funcs[] =
     {"destroy_ogre", 0, destroy_ogre},
     {"key_down", 1, key_down},
     {"create_entity", 2, create_entity},
-    {"create_scenenode", 0, create_scenenode}
+    {"create_scenenode", 0, create_scenenode},
+    {"set_node_position", 4, set_node_position},
+    {"set_node_orientation", 5, set_node_position}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);
