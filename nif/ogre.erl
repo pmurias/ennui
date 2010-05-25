@@ -20,14 +20,37 @@ play() ->
     init_ogre(),
     Node = create_scenenode(),
     Entity = create_entity(Node, 'Cube.mesh'),
+    set_node_position(Node,0.0,0.0,10.0),
     play_loop(Node),
     destroy_ogre().
+
+-define(KC_ESCAPE,1).
+-define(KC_DOWN,16#D0).
+-define(KC_LEFT,16#CB).
+-define(KC_UP,16#C8).
+-define(KC_RIGHT,16#CD).
+
 play_loop (Node) ->
     capture_input(),
     render_frame(),
     {X,Y,Z} = get_node_position(Node),
-    set_node_position(Node, 0.0, 0.0, Z+0.01),
-    Esc = key_down(1),
+    case key_down(?KC_LEFT) of
+        true -> set_node_position(Node, X + 0.01, Y, Z);
+        false -> ok
+    end,
+    case key_down(?KC_RIGHT) of
+        true -> set_node_position(Node, X - 0.01, Y, Z);
+        false -> ok
+    end,
+    case key_down(?KC_UP) of
+        true -> set_node_position(Node, X, Y + 0.01, Z);
+        false -> ok
+    end,
+    case key_down(?KC_DOWN) of
+        true -> set_node_position(Node, X, Y - 0.01, Z);
+        false -> ok
+    end,
+    Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> play_loop(Node);
         true -> ok
