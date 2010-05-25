@@ -161,6 +161,22 @@ static ERL_NIF_TERM set_node_orientation(ErlNifEnv* env, int argc, const ERL_NIF
     return enif_make_atom(env,"ok");
 }
 
+static ERL_NIF_TERM get_node_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
+    Vector3 p = node->getPosition();
+    return enif_make_tuple3(env, enif_make_double(env, p.x), enif_make_double(env, p.y), enif_make_double(env,p.z));
+}
+
+static ERL_NIF_TERM get_node_orientation(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
+    Quaternion p = node->getOrientation();
+    return enif_make_tuple4(env, enif_make_double(env,p.w), enif_make_double(env, p.x), enif_make_double(env, p.y), enif_make_double(env,p.z));
+}
+
+static ERL_NIF_TERM get_average_fps(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    return enif_make_double(env, window->getAverageFPS());
+}
+
 static ErlNifFunc nif_funcs[] =
 {
     {"init_ogre", 0, init_ogre},
@@ -171,7 +187,10 @@ static ErlNifFunc nif_funcs[] =
     {"create_entity", 2, create_entity},
     {"create_scenenode", 0, create_scenenode},
     {"set_node_position", 4, set_node_position},
-    {"set_node_orientation", 5, set_node_position}
+    {"set_node_orientation", 5, set_node_position},
+    {"get_node_position", 1, get_node_position},
+    {"get_node_orientation", 1, get_node_orientation},
+    {"get_average_fps", 0, get_average_fps}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);
