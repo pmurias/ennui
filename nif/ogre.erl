@@ -16,12 +16,16 @@ get_node_position(_) -> "NIF library not loaded".
 get_node_orientation(_) -> "NIF library not loaded".
 get_average_fps() -> "NIF library not loaded".
 
+-record(player,{id,leftDown,rightDown,upDown,downDown,node}).
+
 play() ->
     init_ogre(),
     Node = create_scenenode(),
     Entity = create_entity(Node, 'Cube.mesh'),
     set_node_position(Node,0.0,0.0,10.0),
-    play_loop(Node),
+
+    play_loop([#player{id=0,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node}],{false,false,false,false}),
+
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -30,28 +34,59 @@ play() ->
 -define(KC_UP,16#C8).
 -define(KC_RIGHT,16#CD).
 
-play_loop (Node) ->
+
+
+handle_input(ID,{OldLeft,OldRight,OldUp,OldDown}) ->
+    Left = key_down(?KC_LEFT),
+    Right = key_down(?KC_RIGHT),
+    Up = key_down(?KC_UP),
+    Down = key_down(?KC_DOWN),
+
+    case Left of
+        OldLeft -> ok;
+        _ -> send_to_clients({ID,keyChange,?KC_LEFT,Left})
+    end,
+    case Right of
+        OldRight -> ok;
+        _ -> send_to_clients({ID,keyChange,?KC_RIGHT,Right})
+    end,
+    {Left,Right,Up,Down}.
+
+send_to_clients(Event) -> self() ! Event.
+
+handle_player(Player) ->
+    ID = Player#player.id,
+    receive
+        {ID,keyChange,?KC_LEFT,State}  -> Player#player{leftDown=State};
+        {ID,keyChange,?KC_RIGHT,State} -> Player#player{rightDown=State}
+    after
+        0 -> ok
+    end.
+
+player_logic(Player) ->
+    case Player#player.leftDown of
+        true -> move_node(Player#player.node,{-0.01,0,0});
+        false -> ok
+    end,
+    case Player#player.rightDown of
+        true -> move_node(Player#player.node,{0.01,0,0});
+        false -> ok
+    end.
+move_node(Node,{ByX,ByY,ByZ}) -> 
+    {X,Y,Z} = get_node_position(Node),
+    set_node_position(Node,X + ByX,Y+ByY,Y+ByZ).
+
+play_loop (Players,InputState) ->
     capture_input(),
     render_frame(),
-    {X,Y,Z} = get_node_position(Node),
-    case key_down(?KC_LEFT) of
-        true -> set_node_position(Node, X + 0.01, Y, Z);
-        false -> ok
-    end,
-    case key_down(?KC_RIGHT) of
-        true -> set_node_position(Node, X - 0.01, Y, Z);
-        false -> ok
-    end,
-    case key_down(?KC_UP) of
-        true -> set_node_position(Node, X, Y + 0.01, Z);
-        false -> ok
-    end,
-    case key_down(?KC_DOWN) of
-        true -> set_node_position(Node, X, Y - 0.01, Z);
-        false -> ok
-    end,
+    [Player] = Players,
+
+    NewInputState = handle_input(Player#player.id,InputState),
+    handle_player(Player),
+    player_logic(Player),
+
     Esc = key_down(?KC_ESCAPE),
     case Esc of
-        false -> play_loop(Node);
+        false -> play_loop(Players,NewInputState);
         true -> ok
     end.
