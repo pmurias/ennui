@@ -19,15 +19,15 @@ log_message(_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node}).
 
-create_player(ID) ->
+create_player(ID, Mesh) ->
     Node = create_scenenode(),
-    Entity = create_entity(Node, 'Cube.mesh'),
+    Entity = create_entity(Node, Mesh),
     set_node_position(Node,0.0,0.0,25.0),
     #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node}.
 
 play(ID) ->
     init_ogre(),
-    play_loop(ID,[create_player(0),create_player(1)], {false,false,false,false}),
+    play_loop(ID,[create_player(0, 'Cube.mesh'),create_player(1, 'GreenCube.mesh')], {false,false,false,false}),
 
     destroy_ogre().
 
