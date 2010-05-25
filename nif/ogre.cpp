@@ -48,9 +48,11 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     }
 
     /* To dziadowskie okienko mozna zastapic pozniej ustawieniami z pliku */
-    if(!root->showConfigDialog()) {
-        delete root;
-        return enif_make_atom(env, "not ok");
+    if (!root->restoreConfig()) {
+        if(!root->showConfigDialog()) {
+            delete root;
+            return enif_make_atom(env, "not ok");
+        }
     }
 
     window = root->initialise(true);
