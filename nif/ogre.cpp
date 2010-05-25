@@ -177,6 +177,12 @@ static ERL_NIF_TERM get_average_fps(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     return enif_make_double(env, window->getAverageFPS());
 }
 
+static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char message[255];
+    enif_get_string(env,argv[0],message,255,ERL_NIF_LATIN1);
+    LogManager::getSingleton().getDefaultLog()->logMessage(message);
+    return enif_make_atom(env, "ok");
+}
 static ErlNifFunc nif_funcs[] =
 {
     {"init_ogre", 0, init_ogre},
@@ -190,7 +196,8 @@ static ErlNifFunc nif_funcs[] =
     {"set_node_orientation", 5, set_node_position},
     {"get_node_position", 1, get_node_position},
     {"get_node_orientation", 1, get_node_orientation},
-    {"get_average_fps", 0, get_average_fps}
+    {"get_average_fps", 0, get_average_fps},
+    {"log_message", 1, log_message}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);

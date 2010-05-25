@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/4,set_node_orientation/5,get_node_position/1,get_node_orientation/1,get_average_fps/0,play/0]).
+-export([init_ogre/0,init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/4,set_node_orientation/5,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,play/0]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -15,6 +15,7 @@ set_node_orientation(_,_,_,_,_) -> "NIF library not loaded".
 get_node_position(_) -> "NIF library not loaded".
 get_node_orientation(_) -> "NIF library not loaded".
 get_average_fps() -> "NIF library not loaded".
+log_message(_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node}).
 
@@ -34,14 +35,15 @@ play() ->
 -define(KC_UP,16#C8).
 -define(KC_RIGHT,16#CD).
 
-
+log(Format, Args) ->
+    Str = lists:flatten(io_lib:format(Format, Args)),
+    log_message(Str).
 
 handle_input(ID,{OldLeft,OldRight,OldUp,OldDown}) ->
     Left = key_down(?KC_LEFT),
     Right = key_down(?KC_RIGHT),
     Up = key_down(?KC_UP),
     Down = key_down(?KC_DOWN),
-
     case Left of
         OldLeft -> ok;
         _ -> send_to_clients({ID,keyChange,?KC_LEFT,Left})
@@ -52,7 +54,8 @@ handle_input(ID,{OldLeft,OldRight,OldUp,OldDown}) ->
     end,
     {Left,Right,Up,Down}.
 
-send_to_clients(Event) -> self() ! Event.
+send_to_clients(Event) ->  log("~p,~n", [Event]), self() ! Event.
+
 
 handle_player(Player) ->
     ID = Player#player.id,
