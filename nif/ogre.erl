@@ -27,8 +27,11 @@ create_player(ID, Mesh) ->
 
 play(ID, Clients) ->
     init_ogre(),
+    GrassNode = create_scenenode(),
+    create_entity(GrassNode, 'Grass.mesh'),
+    set_node_position(GrassNode,0.0,0.0,30.0),
     register(ID, self()),
-    play_loop(ID,[create_player(p0, 'Cube.mesh'),create_player(p1, 'GreenCube.mesh')], {false,false,false,false}, Clients),
+    play_loop(ID,[create_player(p0, 'Cube.mesh'),create_player(p1, 'GreenCube.mesh')], {false,false,false,false}, [self()|Clients]),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
