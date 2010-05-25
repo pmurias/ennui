@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/4,set_node_orientation/5,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,play/0]).
+-export([init_ogre/0,init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/4,set_node_orientation/5,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,play/1]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -19,13 +19,15 @@ log_message(_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node}).
 
-play() ->
-    init_ogre(),
+create_player(ID) ->
     Node = create_scenenode(),
     Entity = create_entity(Node, 'Cube.mesh'),
     set_node_position(Node,0.0,0.0,25.0),
+    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node}.
 
-    play_loop([#player{id=0,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node}],{false,false,false,false}),
+play(ID) ->
+    init_ogre(),
+    play_loop(ID,[create_player(0),create_player(1)], {false,false,false,false}),
 
     destroy_ogre().
 
@@ -79,17 +81,15 @@ move_node(Node,{ByX,ByY,ByZ}) ->
     {X,Y,Z} = get_node_position(Node),
     set_node_position(Node,X + ByX,Y+ByY,Z+ByZ).
 
-play_loop (Players,InputState) ->
+play_loop (LocalPlayerID,Players,InputState) ->
     capture_input(),
     render_frame(),
-    [Player] = Players,
-
-    NewInputState = handle_input(Player#player.id,InputState),
-    NewPlayer = handle_player(Player),
-    player_logic(NewPlayer),
+    NewInputState = handle_input(LocalPlayerID,InputState),
+    NewPlayers = lists:map(fun handle_player/1,Players),
+    lists:foreach(fun player_logic/1,NewPlayers),
 
     Esc = key_down(?KC_ESCAPE),
     case Esc of
-        false -> play_loop([NewPlayer],NewInputState);
+        false -> play_loop(LocalPlayerID,NewPlayers,NewInputState);
         true -> ok
     end.
