@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/4,set_node_orientation/5,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,play/1]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/4,set_node_orientation/5,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -21,14 +21,14 @@ log_message(_) -> "NIF library not loaded".
 
 create_player(ID, Mesh) ->
     Node = create_scenenode(),
-    Entity = create_entity(Node, Mesh),
+    create_entity(Node, Mesh),
     set_node_position(Node,0.0,0.0,25.0),
     #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node}.
 
-play(ID) ->
+play(ID, Clients) ->
     init_ogre(),
-    play_loop(ID,[create_player(0, 'Cube.mesh'),create_player(1, 'GreenCube.mesh')], {false,false,false,false}),
-
+    register(ID, self()),
+    play_loop(ID,[create_player(p0, 'Cube.mesh'),create_player(p1, 'GreenCube.mesh')], {false,false,false,false}, Clients),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -41,22 +41,22 @@ log(Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
     log_message(Str).
 
-handle_input(ID,{OldLeft,OldRight,OldUp,OldDown}) ->
+handle_input(ID,{OldLeft,OldRight,OldUp,OldDown},Clients) ->
     Left = key_down(?KC_LEFT),
     Right = key_down(?KC_RIGHT),
     Up = key_down(?KC_UP),
     Down = key_down(?KC_DOWN),
     case Left of
         OldLeft -> ok;
-        _ -> send_to_clients({ID,keyChange,?KC_LEFT,Left})
+        _ -> send_to_clients(Clients, {ID,keyChange,?KC_LEFT,Left})
     end,
     case Right of
         OldRight -> ok;
-        _ -> send_to_clients({ID,keyChange,?KC_RIGHT,Right})
+        _ -> send_to_clients(Clients, {ID,keyChange,?KC_RIGHT,Right})
     end,
     {Left,Right,Up,Down}.
 
-send_to_clients(Event) ->  log("~p,~n", [Event]), self() ! Event.
+send_to_clients(Clients,Event) -> lists:foreach((fun(Client)->Client ! Event end), Clients).
 
 
 handle_player(Player) ->
@@ -70,26 +70,26 @@ handle_player(Player) ->
 
 player_logic(Player) ->
     case Player#player.leftDown of
-        true -> move_node(Player#player.node,{0.01,0.0,0.0});
+        true -> move_node(Player#player.node,{0.1,0.0,0.0});
         false -> ok
     end,
     case Player#player.rightDown of
-        true -> move_node(Player#player.node,{-0.01,0.0,0.0});
+        true -> move_node(Player#player.node,{-0.1,0.0,0.0});
         false -> ok
     end.
 move_node(Node,{ByX,ByY,ByZ}) -> 
     {X,Y,Z} = get_node_position(Node),
     set_node_position(Node,X + ByX,Y+ByY,Z+ByZ).
 
-play_loop (LocalPlayerID,Players,InputState) ->
+play_loop (LocalPlayerID,Players,InputState,Clients) ->
     capture_input(),
     render_frame(),
-    NewInputState = handle_input(LocalPlayerID,InputState),
+    NewInputState = handle_input(LocalPlayerID,InputState,Clients),
     NewPlayers = lists:map(fun handle_player/1,Players),
     lists:foreach(fun player_logic/1,NewPlayers),
 
     Esc = key_down(?KC_ESCAPE),
     case Esc of
-        false -> play_loop(LocalPlayerID,NewPlayers,NewInputState);
+        false -> play_loop(LocalPlayerID,NewPlayers,NewInputState,Clients);
         true -> ok
     end.
