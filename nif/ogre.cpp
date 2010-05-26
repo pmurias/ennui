@@ -27,6 +27,29 @@ static ERL_NIF_TERM hello(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     return enif_make_string(env, "Hello world!", ERL_NIF_LATIN1);
 }
 
+static Quaternion get_quaternion(ErlNifEnv *env, const ERL_NIF_TERM *arg) {
+    double x,y,z,w;
+    const ERL_NIF_TERM *tuple;
+    int arity;
+    enif_get_tuple(env, *arg, &arity, &tuple);
+    enif_get_double(env, tuple[0], &w);
+    enif_get_double(env, tuple[1], &x);
+    enif_get_double(env, tuple[2], &y);
+    enif_get_double(env, tuple[3], &z);
+    return Quaternion(w,x,y,z);
+}
+
+static Vector3 get_vector(ErlNifEnv *env, const ERL_NIF_TERM *arg) {
+    double x,y,z,w;
+    const ERL_NIF_TERM *tuple;
+    int arity;
+    enif_get_tuple(env, *arg, &arity, &tuple);
+    enif_get_double(env, tuple[0], &x);
+    enif_get_double(env, tuple[1], &y);
+    enif_get_double(env, tuple[2], &z);
+    return Vector3(x,y,z);
+}
+
 static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     root = new Root;
 
@@ -141,55 +164,25 @@ static ERL_NIF_TERM create_entity(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 }
 
 static ERL_NIF_TERM set_node_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    double x,y,z;
     SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
-    const ERL_NIF_TERM *tuple;
-    int arity;
-    enif_get_tuple(env, argv[1], &arity, &tuple);
-    enif_get_double(env, tuple[0], &x);
-    enif_get_double(env, tuple[1], &y);
-    enif_get_double(env, tuple[2], &z);
-    node->setPosition(Vector3(x,y,z));
+    node->setPosition(get_vector(env, &argv[1]));
     return enif_make_atom(env,"ok");
 }
 
 
 static ERL_NIF_TERM set_camera_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    double x,y,z;
-    const ERL_NIF_TERM *tuple;
-    int arity;
-    enif_get_tuple(env, argv[0], &arity, &tuple);
-    enif_get_double(env, tuple[0], &x);
-    enif_get_double(env, tuple[1], &y);
-    enif_get_double(env, tuple[2], &z);
-    camera->setPosition(Vector3(x,y,z));
+    camera->setPosition(get_vector(env, &argv[0]));
     return enif_make_atom(env,"ok");
 }
 
 static ERL_NIF_TERM set_node_orientation(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    double w,x,y,z;
     SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
-    const ERL_NIF_TERM *tuple;
-    int arity;
-    enif_get_tuple(env, argv[1], &arity, &tuple);
-    enif_get_double(env, tuple[0], &w);
-    enif_get_double(env, tuple[1], &x);
-    enif_get_double(env, tuple[2], &y);
-    enif_get_double(env, tuple[3], &z);
-    node->setOrientation(Quaternion(w,x,y,z));
+    node->setOrientation(get_quaternion(env, &argv[1]));
     return enif_make_atom(env,"ok");
 }
 
 static ERL_NIF_TERM set_camera_orientation(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    double w,x,y,z;
-    const ERL_NIF_TERM *tuple;
-    int arity;
-    enif_get_tuple(env, argv[0], &arity, &tuple);
-    enif_get_double(env, tuple[0], &w);
-    enif_get_double(env, tuple[1], &x);
-    enif_get_double(env, tuple[2], &y);
-    enif_get_double(env, tuple[3], &z);
-    camera->setOrientation(Quaternion(w,x,y,z));
+    camera->setOrientation(get_quaternion(env, &argv[0]));
     return enif_make_atom(env,"ok");
 }
 
@@ -216,18 +209,12 @@ static ERL_NIF_TERM get_camera_orientation(ErlNifEnv* env, int argc, const ERL_N
 }
 
 static ERL_NIF_TERM get_rotation_to(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    double x1,y1,z1,x2,y2,z2;
-    const ERL_NIF_TERM *tuple1, *tuple2;
-    int arity1, arity2;
-    enif_get_tuple(env, argv[0], &arity1, &tuple1);
-    enif_get_double(env, tuple1[0], &x1);
-    enif_get_double(env, tuple1[1], &y1);
-    enif_get_double(env, tuple1[2], &z1);
-    enif_get_tuple(env, argv[0], &arity2, &tuple2);
-    enif_get_double(env, tuple2[0], &x2);
-    enif_get_double(env, tuple2[1], &y2);
-    enif_get_double(env, tuple2[2], &z2);
-    Quaternion p = Vector3(x1,y1,z1).getRotationTo(Vector3(x2,y2,z2));
+    Quaternion p = get_vector(env,&argv[0]).getRotationTo(get_vector(env,&argv[1]));
+    return enif_make_tuple4(env, enif_make_double(env,p.w), enif_make_double(env, p.x), enif_make_double(env, p.y), enif_make_double(env,p.z));
+}
+
+static ERL_NIF_TERM mult_quaternion_quaternion(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    Quaternion p = get_quaternion(env, &argv[0]) * get_quaternion(env, &argv[1]);
     return enif_make_tuple4(env, enif_make_double(env,p.w), enif_make_double(env, p.x), enif_make_double(env, p.y), enif_make_double(env,p.z));
 }
 
@@ -261,7 +248,8 @@ static ErlNifFunc nif_funcs[] =
     {"set_camera_orientation", 1, set_camera_orientation},
     {"get_camera_position", 0, get_camera_position},
     {"get_camera_orientation", 0, get_camera_orientation},
-    {"get_rotation_to", 2, get_rotation_to}
+    {"get_rotation_to", 2, get_rotation_to},
+    {"mult_quaternion_quaternion", 2, mult_quaternion_quaternion}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);

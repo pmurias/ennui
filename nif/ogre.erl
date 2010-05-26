@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -21,6 +21,7 @@ set_camera_orientation(_) -> "NIF library not loaded".
 get_camera_position() -> "NIF library not loaded".
 get_camera_orientation() -> "NIF library not loaded".
 get_rotation_to(_,_) -> "NIF library not loaded".
+mult_quaternion_quaternion(_,_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node}).
 
@@ -34,7 +35,7 @@ play(ID, Clients) ->
     init_ogre(),
     GrassNode = create_scenenode(),
     set_camera_position({0.0, 2.8, 0.0}),
-    Orient = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
+    Orient = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.6, 2.0}),
     set_camera_orientation(Orient),
     create_entity(GrassNode, 'Grass.mesh'),
     register(ID, self()),
@@ -110,6 +111,8 @@ move_node(Node,{ByX,ByY,ByZ}) ->
     {X,Y,Z} = get_node_position(Node),
     set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
+    
+
 find_localplayer(Players,LocalPlayerID) ->
     [LocalPlayer] = lists:filter((fun(Player) -> ID = Player#player.id, ID == LocalPlayerID end), Players),
     LocalPlayer.
@@ -122,8 +125,8 @@ play_loop (LocalPlayerID,Players,InputState,Clients) ->
     lists:foreach(fun player_logic/1,NewPlayers),
     LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
     LPNode = LocalPlayer#player.node,
-
-
+    {X,Y,Z} = get_node_position(LPNode),
+    set_camera_position({X,Y+3.2,Z+5.0}),
 
     Esc = key_down(?KC_ESCAPE),
     case Esc of
