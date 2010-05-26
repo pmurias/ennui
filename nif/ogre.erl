@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/4,set_node_orientation/5,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -10,28 +10,35 @@ render_frame() -> "NIF library not loaded".
 key_down(_) -> "NIF library not loaded".
 create_scenenode() -> "NIF library not loaded".
 create_entity(_,_) -> "NIF library not loaded".
-set_node_position(_,_,_,_) -> "NIF library not loaded".
-set_node_orientation(_,_,_,_,_) -> "NIF library not loaded".
+set_node_position(_,_) -> "NIF library not loaded".
+set_node_orientation(_,_) -> "NIF library not loaded".
 get_node_position(_) -> "NIF library not loaded".
 get_node_orientation(_) -> "NIF library not loaded".
 get_average_fps() -> "NIF library not loaded".
 log_message(_) -> "NIF library not loaded".
+set_camera_position(_) -> "NIF library not loaded".
+set_camera_orientation(_) -> "NIF library not loaded".
+get_camera_position() -> "NIF library not loaded".
+get_camera_orientation() -> "NIF library not loaded".
+get_rotation_to(_,_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node}).
 
 create_player(ID, Mesh) ->
     Node = create_scenenode(),
     create_entity(Node, Mesh),
-    set_node_position(Node,0.0,0.0,25.0),
+    set_node_position(Node,{0.0,0.0,0.0}),
     #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node}.
 
 play(ID, Clients) ->
     init_ogre(),
     GrassNode = create_scenenode(),
+    set_camera_position({0.0, 2.8, 0.0}),
+    Orient = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
+    set_camera_orientation(Orient),
     create_entity(GrassNode, 'Grass.mesh'),
-    set_node_position(GrassNode,0.0,0.0,30.0),
     register(ID, self()),
-    play_loop(ID,[create_player(p0, 'Cube.mesh'),create_player(p1, 'GreenCube.mesh')], {false,false,false,false}, [self()|Clients]),
+    play_loop(ID,[create_player(p0, 'Policeman.mesh'),create_player(p1, 'GreenCube.mesh')], {false,false,false,false}, [self()|Clients]),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -84,24 +91,28 @@ handle_player(Player) ->
 player_logic(Player) ->
     Speed = 0.1,
     case Player#player.leftDown of
-        true -> move_node(Player#player.node,{Speed,0.0,0.0});
+        true -> move_node(Player#player.node,{-Speed,0.0,0.0});
         false -> ok
     end,
     case Player#player.upDown of
-        true -> move_node(Player#player.node,{0,Speed,0.0});
+        true -> move_node(Player#player.node,{0,0.0,-Speed});
         false -> ok
     end,
     case Player#player.downDown of
-        true -> move_node(Player#player.node,{0,-Speed,0.0});
+        true -> move_node(Player#player.node,{0,0.0,Speed});
         false -> ok
     end,
     case Player#player.rightDown of
-        true -> move_node(Player#player.node,{-Speed,0.0,0.0});
+        true -> move_node(Player#player.node,{Speed,0.0,0.0});
         false -> ok
     end.
-move_node(Node,{ByX,ByY,ByZ}) -> 
+move_node(Node,{ByX,ByY,ByZ}) ->  
     {X,Y,Z} = get_node_position(Node),
-    set_node_position(Node,X + ByX,Y+ByY,Z+ByZ).
+    set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
+
+find_localplayer(Players,LocalPlayerID) ->
+    [LocalPlayer] = lists:filter((fun(Player) -> ID = Player#player.id, ID == LocalPlayerID end), Players),
+    LocalPlayer.
 
 play_loop (LocalPlayerID,Players,InputState,Clients) ->
     capture_input(),
@@ -109,6 +120,10 @@ play_loop (LocalPlayerID,Players,InputState,Clients) ->
     NewInputState = handle_input(LocalPlayerID,InputState,Clients),
     NewPlayers = lists:map(fun handle_player/1,Players),
     lists:foreach(fun player_logic/1,NewPlayers),
+    LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
+    LPNode = LocalPlayer#player.node,
+
+
 
     Esc = key_down(?KC_ESCAPE),
     case Esc of
