@@ -223,6 +223,10 @@ static ERL_NIF_TERM mult_quaternion_vector(ErlNifEnv* env, int argc, const ERL_N
     return enif_make_tuple3(env, enif_make_double(env,p.x), enif_make_double(env, p.y), enif_make_double(env, p.z));
 }
 
+static ERL_NIF_TERM get_quaternion_inverse(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    Quaternion p = get_quaternion(env, &argv[0]).Inverse();
+    return enif_make_tuple4(env, enif_make_double(env, p.w), enif_make_double(env,p.x), enif_make_double(env, p.y), enif_make_double(env, p.z));
+}
 static ERL_NIF_TERM get_average_fps(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_double(env, window->getAverageFPS());
 }
@@ -254,7 +258,8 @@ static ErlNifFunc nif_funcs[] =
     {"get_camera_orientation", 0, get_camera_orientation},
     {"get_rotation_to", 2, get_rotation_to},
     {"mult_quaternion_quaternion", 2, mult_quaternion_quaternion},
-    {"mult_quaternion_vector", 2, mult_quaternion_vector}
+    {"mult_quaternion_vector", 2, mult_quaternion_vector},
+    {"get_quaternion_inverse", 1, get_quaternion_inverse}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);

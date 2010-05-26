@@ -1,4 +1,4 @@
-material Policeman/TEXFACE/policeman.jpg
+material Policeman/TEXFACE/aopoliceman.png
 {
 	receive_shadows on
 	technique
@@ -10,7 +10,7 @@ material Policeman/TEXFACE/policeman.jpg
 			emissive 0.000000 0.000000 0.000000 1.000000
 			texture_unit
 			{
-				texture policeman.jpg
+				texture aopoliceman.png
 				colour_op modulate
 			}
 		}

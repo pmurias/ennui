@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -23,6 +23,7 @@ get_camera_orientation() -> "NIF library not loaded".
 get_rotation_to(_,_) -> "NIF library not loaded".
 mult_quaternion_quaternion(_,_) -> "NIF library not loaded".
 mult_quaternion_vector(_,_) -> "NIF library not loaded".
+get_quaternion_inverse(_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node}).
 
@@ -99,11 +100,11 @@ player_logic(Player) ->
         false -> ok
     end,
     case Player#player.upDown of
-        true -> move_node(Player#player.node,{0,0.0,-Speed});
+        true -> move_node(Player#player.node,{0,0.0,Speed});
         false -> ok
     end,
     case Player#player.downDown of
-        true -> move_node(Player#player.node,{0,0.0,Speed});
+        true -> move_node(Player#player.node,{0,0.0,-Speed});
         false -> ok
     end,
     case Player#player.rightDown of
@@ -137,9 +138,10 @@ play_loop (LocalPlayerID,Players,InputState,Clients) ->
     {X,Y,Z} = get_node_position(LPNode),
     NodeOrientation = get_node_orientation(LPNode),
     CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
-    CameraOrientation = mult_quaternion_quaternion(NodeOrientation, CameraDownRotation),
+    Camera180Rotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}),
+    CameraOrientation = mult_quaternion_quaternion(mult_quaternion_quaternion(NodeOrientation, Camera180Rotation), CameraDownRotation),
     set_camera_orientation(CameraOrientation),
-    {CamMovementX, CamMovementY, CamMovementZ} = mult_quaternion_vector(NodeOrientation, {0.0, 0.0, 6.0}),
+    {CamMovementX, CamMovementY, CamMovementZ} = mult_quaternion_vector(NodeOrientation, {0.0, 0.0, -6.0}),
     set_camera_position({X+CamMovementX,Y+CamMovementY+3.2,Z+CamMovementZ}),
 
     Esc = key_down(?KC_ESCAPE),
