@@ -218,6 +218,10 @@ static ERL_NIF_TERM mult_quaternion_quaternion(ErlNifEnv* env, int argc, const E
     return enif_make_tuple4(env, enif_make_double(env,p.w), enif_make_double(env, p.x), enif_make_double(env, p.y), enif_make_double(env,p.z));
 }
 
+static ERL_NIF_TERM mult_quaternion_vector(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    Vector3 p = get_quaternion(env, &argv[0]) * get_vector(env, &argv[1]);
+    return enif_make_tuple3(env, enif_make_double(env,p.x), enif_make_double(env, p.y), enif_make_double(env, p.z));
+}
 
 static ERL_NIF_TERM get_average_fps(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_double(env, window->getAverageFPS());
@@ -239,7 +243,7 @@ static ErlNifFunc nif_funcs[] =
     {"create_entity", 2, create_entity},
     {"create_scenenode", 0, create_scenenode},
     {"set_node_position", 2, set_node_position},
-    {"set_node_orientation", 2, set_node_position},
+    {"set_node_orientation", 2, set_node_orientation},
     {"get_node_position", 1, get_node_position},
     {"get_node_orientation", 1, get_node_orientation},
     {"get_average_fps", 0, get_average_fps},
@@ -249,7 +253,8 @@ static ErlNifFunc nif_funcs[] =
     {"get_camera_position", 0, get_camera_position},
     {"get_camera_orientation", 0, get_camera_orientation},
     {"get_rotation_to", 2, get_rotation_to},
-    {"mult_quaternion_quaternion", 2, mult_quaternion_quaternion}
+    {"mult_quaternion_quaternion", 2, mult_quaternion_quaternion},
+    {"mult_quaternion_vector", 2, mult_quaternion_vector}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);

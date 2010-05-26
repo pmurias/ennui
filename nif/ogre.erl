@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -22,6 +22,7 @@ get_camera_position() -> "NIF library not loaded".
 get_camera_orientation() -> "NIF library not loaded".
 get_rotation_to(_,_) -> "NIF library not loaded".
 mult_quaternion_quaternion(_,_) -> "NIF library not loaded".
+mult_quaternion_vector(_,_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node}).
 
@@ -91,8 +92,10 @@ handle_player(Player) ->
 
 player_logic(Player) ->
     Speed = 0.1,
+    LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.1, 0.0, 1.0}),
+    RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.1, 0.0, 1.0}),
     case Player#player.leftDown of
-        true -> move_node(Player#player.node,{-Speed,0.0,0.0});
+        true -> rotate_node(Player#player.node,LeftRotation);
         false -> ok
     end,
     case Player#player.upDown of
@@ -104,14 +107,20 @@ player_logic(Player) ->
         false -> ok
     end,
     case Player#player.rightDown of
-        true -> move_node(Player#player.node,{Speed,0.0,0.0});
+        true -> rotate_node(Player#player.node,RightRotation);
         false -> ok
     end.
-move_node(Node,{ByX,ByY,ByZ}) ->  
+
+move_node(Node,By) ->  
     {X,Y,Z} = get_node_position(Node),
+    Orientation = get_node_orientation(Node),
+    {ByX, ByY, ByZ} = mult_quaternion_vector(Orientation, By),
     set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
-    
+rotate_node(Node, By) ->
+    CurrentOrientation = get_node_orientation(Node),
+    NewOrientation = mult_quaternion_quaternion(CurrentOrientation, By),
+    set_node_orientation(Node, NewOrientation).
 
 find_localplayer(Players,LocalPlayerID) ->
     [LocalPlayer] = lists:filter((fun(Player) -> ID = Player#player.id, ID == LocalPlayerID end), Players),
@@ -126,7 +135,12 @@ play_loop (LocalPlayerID,Players,InputState,Clients) ->
     LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
     LPNode = LocalPlayer#player.node,
     {X,Y,Z} = get_node_position(LPNode),
-    set_camera_position({X,Y+3.2,Z+5.0}),
+    NodeOrientation = get_node_orientation(LPNode),
+    CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
+    CameraOrientation = mult_quaternion_quaternion(NodeOrientation, CameraDownRotation),
+    set_camera_orientation(CameraOrientation),
+    {CamMovementX, CamMovementY, CamMovementZ} = mult_quaternion_vector(NodeOrientation, {0.0, 0.0, 6.0}),
+    set_camera_position({X+CamMovementX,Y+CamMovementY+3.2,Z+CamMovementZ}),
 
     Esc = key_down(?KC_ESCAPE),
     case Esc of
