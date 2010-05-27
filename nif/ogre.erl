@@ -55,7 +55,8 @@ play(ID, Clients) ->
     GrassEntity = create_entity('Grass.mesh'),
     attach_entity_to_node(GrassEntity, GrassNode),
     register(ID, self()),
-    play_loop(ID,[create_player(p0, 'Policeman.mesh'),create_player(p1, 'Policeman.mesh')], {false,false,false,false}, [self()|Clients]),
+    Players = [create_player(p0, 'Policeman.mesh'),create_player(p1, 'Policeman.mesh')],
+    play_loop(1,ID, Players, {false,false,false,false}, [self()|Clients]),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -134,7 +135,7 @@ player_logic(Player) ->
         false -> ok
     end.
 
-move_node(Node,By) ->  
+move_node(Node,By) ->
     {X,Y,Z} = get_node_position(Node),
     Orientation = get_node_orientation(Node),
     {ByX, ByY, ByZ} = mult_quaternion_vector(Orientation, By),
@@ -149,13 +150,19 @@ find_localplayer(Players,LocalPlayerID) ->
     [LocalPlayer] = lists:filter((fun(Player) -> ID = Player#player.id, ID == LocalPlayerID end), Players),
     LocalPlayer.
 
-play_loop (LocalPlayerID,Players,InputState,Clients) ->
+wait_for_player(Player,Frame) ->
+    ID = Player#player.id,
+    receive 
+        {frameDone,ID,Frame} -> ok
+    end.
+play_loop (Frame,LocalPlayerID,Players,InputState,Clients) ->
     capture_input(),
     render_frame(),
-    NewInputState = handle_input(LocalPlayerID,InputState,Clients),
     NewPlayers = lists:map(fun handle_player/1,Players),
+    NewInputState = handle_input(LocalPlayerID,InputState,Clients),
     lists:foreach(fun player_logic/1,NewPlayers),
     LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
+
     LPNode = LocalPlayer#player.node,
     {X,Y,Z} = get_node_position(LPNode),
     NodeOrientation = get_node_orientation(LPNode),
@@ -168,6 +175,10 @@ play_loop (LocalPlayerID,Players,InputState,Clients) ->
 
     Esc = key_down(?KC_ESCAPE),
     case Esc of
-        false -> play_loop(LocalPlayerID,NewPlayers,NewInputState,Clients);
+        false -> 
+            send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
+            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end,NewPlayers),
+            play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients);
         true -> ok
     end.
+
