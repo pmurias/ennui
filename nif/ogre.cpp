@@ -101,9 +101,15 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     camera->setNearClipDistance(0.1);
     camera->setFarClipDistance(1000);
-    sceneMgr->setAmbientLight(ColourValue(1,1,1,1));
     viewPort->setBackgroundColour(ColourValue(1,0,0));
     camera->setAspectRatio(4.0/3.0);
+    sceneMgr->setShadowTechnique(SHADOWTYPE_STENCIL_ADDITIVE);
+
+    Light *light = sceneMgr->createLight();
+    light->setType(Light::LT_DIRECTIONAL);
+    light->setDiffuseColour(ColourValue(1,1,1));
+    light->setSpecularColour(ColourValue(0.2,0.2,0.2));
+    light->setDirection(Vector3(1,-1,1));
 
     unsigned int width, height, depth;
     int top, left;
@@ -161,6 +167,7 @@ static ERL_NIF_TERM create_entity(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     enif_get_atom(env,argv[1],meshName,200);
     Entity *entity = sceneMgr->createEntity(meshName);
     node->attachObject(entity);
+    entity->setCastShadows(true);
     return wrap_pointer(env,entity_resource,(void*)entity);
 }
 
@@ -264,6 +271,12 @@ static ERL_NIF_TERM add_animationstate_time(ErlNifEnv* env, int argc, const ERL_
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM set_ambient_light(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    Vector3 c = get_vector(env, &argv[0]);
+    sceneMgr->setAmbientLight(ColourValue(c.x,c.y,c.z));
+    return enif_make_atom(env, "ok");
+}
+
 static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char message[255];
     enif_get_string(env,argv[0],message,255,ERL_NIF_LATIN1);
@@ -297,7 +310,8 @@ static ErlNifFunc nif_funcs[] =
     {"get_animationstate", 2, get_animationstate},
     {"set_animationstate_enabled", 2, set_animationstate_enabled},
     {"set_animationstate_loop", 2, set_animationstate_loop},
-    {"add_animationstate_time", 2, add_animationstate_time}
+    {"add_animationstate_time", 2, add_animationstate_time},
+    {"set_ambient_light", 1, set_ambient_light}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);

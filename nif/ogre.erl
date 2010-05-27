@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -28,6 +28,7 @@ get_animationstate(_,_) -> "NIF library not loaded".
 set_animationstate_enabled(_,_) -> "NIF library not loaded".
 set_animationstate_loop(_,_) -> "NIF library not loaded".
 add_animationstate_time(_,_) -> "NIF library not loaded".
+set_ambient_light(_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node,entity}).
 
@@ -39,7 +40,8 @@ create_player(ID, Mesh) ->
 
 play(ID, Clients) ->
     init_ogre(),
-    GrassNode = create_scenenode(),
+    set_ambient_light({0.7, 0.7, 0.7}),
+    GrassNode = create_scenenode(),    
     set_camera_position({0.0, 2.8, 0.0}),
     Orient = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.6, 2.0}),
     set_camera_orientation(Orient),
@@ -96,8 +98,8 @@ handle_player(Player) ->
 
 player_logic(Player) ->
     Speed = 0.1,
-    LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.1, 0.0, 1.0}),
-    RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.1, 0.0, 1.0}),
+    LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
+    RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
     RunAnimState = get_animationstate(Player#player.entity, 'Run'),
     IdleAnimState = get_animationstate(Player#player.entity, 'Idle'),
     case Player#player.leftDown of
@@ -131,7 +133,7 @@ move_node(Node,By) ->
     set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
 rotate_node(Node, By) ->
-    CurrentOrientation = get_node_orientation(Node),
+    CurrentOrientation = get_node_orientation(Node), 
     NewOrientation = mult_quaternion_quaternion(CurrentOrientation, By),
     set_node_orientation(Node, NewOrientation).
 
