@@ -21,6 +21,7 @@ OIS::InputManager* inputManager;
 
 static ErlNifResourceType* node_resource;
 static ErlNifResourceType* entity_resource;
+static ErlNifResourceType* animationstate_resource;
 
 static ERL_NIF_TERM hello(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -231,12 +232,45 @@ static ERL_NIF_TERM get_average_fps(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     return enif_make_double(env, window->getAverageFPS());
 }
 
+static ERL_NIF_TERM get_animationstate(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char animName[200];
+    Entity *entity = (Entity *)unwrap_pointer(env,entity_resource,argv[0]);
+    enif_get_atom(env,argv[1], animName,200);
+    AnimationState *animationState = entity->getAnimationState(animName);
+    return wrap_pointer(env,animationstate_resource,(void*)animationState);
+}
+
+static ERL_NIF_TERM set_animationstate_enabled(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    AnimationState *as = (AnimationState *)unwrap_pointer(env,animationstate_resource,argv[0]);
+    int enabled;
+    enif_get_int(env,argv[1], &enabled);
+    as->setEnabled((bool)(enabled));
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM set_animationstate_loop(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    AnimationState *as = (AnimationState *)unwrap_pointer(env,animationstate_resource,argv[0]);
+    int enabled;
+    enif_get_int(env,argv[1], &enabled);
+    as->setLoop((bool)(enabled));
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM add_animationstate_time(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    AnimationState *as = (AnimationState *)unwrap_pointer(env,animationstate_resource,argv[0]);
+    double time;
+    enif_get_double(env,argv[1], &time);
+    as->addTime(time);
+    return enif_make_atom(env, "ok");
+}
+
 static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char message[255];
     enif_get_string(env,argv[0],message,255,ERL_NIF_LATIN1);
     LogManager::getSingleton().getDefaultLog()->logMessage(message);
     return enif_make_atom(env, "ok");
 }
+
 static ErlNifFunc nif_funcs[] =
 {
     {"init_ogre", 0, init_ogre},
@@ -259,11 +293,16 @@ static ErlNifFunc nif_funcs[] =
     {"get_rotation_to", 2, get_rotation_to},
     {"mult_quaternion_quaternion", 2, mult_quaternion_quaternion},
     {"mult_quaternion_vector", 2, mult_quaternion_vector},
-    {"get_quaternion_inverse", 1, get_quaternion_inverse}
+    {"get_quaternion_inverse", 1, get_quaternion_inverse},
+    {"get_animationstate", 2, get_animationstate},
+    {"set_animationstate_enabled", 2, set_animationstate_enabled},
+    {"set_animationstate_loop", 2, set_animationstate_loop},
+    {"add_animationstate_time", 2, add_animationstate_time}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);
     entity_resource = enif_open_resource_type(env,"Ogre Entity",NULL,ERL_NIF_RT_CREATE,NULL);
+    animationstate_resource = enif_open_resource_type(env,"Ogre AnimationState",NULL,ERL_NIF_RT_CREATE,NULL);
     return 0;
 }
 extern "C" {

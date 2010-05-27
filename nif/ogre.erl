@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -24,14 +24,18 @@ get_rotation_to(_,_) -> "NIF library not loaded".
 mult_quaternion_quaternion(_,_) -> "NIF library not loaded".
 mult_quaternion_vector(_,_) -> "NIF library not loaded".
 get_quaternion_inverse(_) -> "NIF library not loaded".
+get_animationstate(_,_) -> "NIF library not loaded".
+set_animationstate_enabled(_,_) -> "NIF library not loaded".
+set_animationstate_loop(_,_) -> "NIF library not loaded".
+add_animationstate_time(_,_) -> "NIF library not loaded".
 
--record(player,{id,leftDown,rightDown,upDown,downDown,node}).
+-record(player,{id,leftDown,rightDown,upDown,downDown,node,entity}).
 
 create_player(ID, Mesh) ->
     Node = create_scenenode(),
-    create_entity(Node, Mesh),
+    Entity=create_entity(Node, Mesh),
     set_node_position(Node,{0.0,0.0,0.0}),
-    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node}.
+    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node,entity=Entity}.
 
 play(ID, Clients) ->
     init_ogre(),
@@ -41,7 +45,7 @@ play(ID, Clients) ->
     set_camera_orientation(Orient),
     create_entity(GrassNode, 'Grass.mesh'),
     register(ID, self()),
-    play_loop(ID,[create_player(p0, 'Policeman.mesh'),create_player(p1, 'GreenCube.mesh')], {false,false,false,false}, [self()|Clients]),
+    play_loop(ID,[create_player(p0, 'Policeman.mesh'),create_player(p1, 'Policeman.mesh')], {false,false,false,false}, [self()|Clients]),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -79,7 +83,6 @@ handle_input(ID,{OldLeft,OldRight,OldUp,OldDown},Clients) ->
 
 send_to_clients(Clients,Event) -> lists:foreach((fun(Client)->Client ! Event end), Clients).
 
-
 handle_player(Player) ->
     ID = Player#player.id,
     receive
@@ -95,13 +98,22 @@ player_logic(Player) ->
     Speed = 0.1,
     LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.1, 0.0, 1.0}),
     RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.1, 0.0, 1.0}),
+    RunAnimState = get_animationstate(Player#player.entity, 'Run'),
+    IdleAnimState = get_animationstate(Player#player.entity, 'Idle'),
     case Player#player.leftDown of
         true -> rotate_node(Player#player.node,LeftRotation);
         false -> ok
     end,
     case Player#player.upDown of
-        true -> move_node(Player#player.node,{0,0.0,Speed});
-        false -> ok
+        true -> move_node(Player#player.node,{0,0.0,Speed}), 
+            set_animationstate_enabled(IdleAnimState, 0),        
+            set_animationstate_enabled(RunAnimState, 1),
+            add_animationstate_time(RunAnimState, 0.01666);
+        false ->
+            set_animationstate_enabled(IdleAnimState, 1),
+            set_animationstate_enabled(RunAnimState, 0),
+            add_animationstate_time(IdleAnimState, 0.00666),
+            ok
     end,
     case Player#player.downDown of
         true -> move_node(Player#player.node,{0,0.0,-Speed});
