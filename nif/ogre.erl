@@ -1,15 +1,17 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/2,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
+
 init_ogre() -> "NIF library not loaded".
 destroy_ogre() -> "NIF library not loaded".
 capture_input() -> "NIF library not loaded".
 render_frame() -> "NIF library not loaded".
 key_down(_) -> "NIF library not loaded".
 create_scenenode() -> "NIF library not loaded".
-create_entity(_,_) -> "NIF library not loaded".
+create_entity(_) -> "NIF library not loaded".
+attach_entity_to_node(_,_) -> "NIF library not loaded".
 set_node_position(_,_) -> "NIF library not loaded".
 set_node_orientation(_,_) -> "NIF library not loaded".
 get_node_position(_) -> "NIF library not loaded".
@@ -29,12 +31,17 @@ set_animationstate_enabled(_,_) -> "NIF library not loaded".
 set_animationstate_loop(_,_) -> "NIF library not loaded".
 add_animationstate_time(_,_) -> "NIF library not loaded".
 set_ambient_light(_) -> "NIF library not loaded".
+attach_entity_to_bone(_,_,_) -> "NIF library not loaded".
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node,entity}).
 
 create_player(ID, Mesh) ->
     Node = create_scenenode(),
-    Entity=create_entity(Node, Mesh),
+    Entity=create_entity(Mesh),
+    attach_entity_to_node(Entity,Node),
+    ClubEntity = create_entity('PoliceClub.mesh'),
+    attach_entity_to_bone(Entity, ClubEntity, 'Bone.001_R.004'),
+
     set_node_position(Node,{0.0,0.0,0.0}),
     #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node,entity=Entity}.
 
@@ -45,7 +52,8 @@ play(ID, Clients) ->
     set_camera_position({0.0, 2.8, 0.0}),
     Orient = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.6, 2.0}),
     set_camera_orientation(Orient),
-    create_entity(GrassNode, 'Grass.mesh'),
+    GrassEntity = create_entity('Grass.mesh'),
+    attach_entity_to_node(GrassEntity, GrassNode),
     register(ID, self()),
     play_loop(ID,[create_player(p0, 'Policeman.mesh'),create_player(p1, 'Policeman.mesh')], {false,false,false,false}, [self()|Clients]),
     destroy_ogre().

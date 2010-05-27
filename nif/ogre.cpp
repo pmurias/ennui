@@ -101,7 +101,7 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     camera->setNearClipDistance(0.1);
     camera->setFarClipDistance(1000);
-    viewPort->setBackgroundColour(ColourValue(1,0,0));
+    viewPort->setBackgroundColour(ColourValue(0.3,0.6,1.0));
     camera->setAspectRatio(4.0/3.0);
     sceneMgr->setShadowTechnique(SHADOWTYPE_STENCIL_ADDITIVE);
 
@@ -163,10 +163,8 @@ static ERL_NIF_TERM create_scenenode(ErlNifEnv* env, int argc, const ERL_NIF_TER
 }
 static ERL_NIF_TERM create_entity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char meshName[200];
-    SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
-    enif_get_atom(env,argv[1],meshName,200);
+    enif_get_atom(env,argv[0],meshName,200);
     Entity *entity = sceneMgr->createEntity(meshName);
-    node->attachObject(entity);
     entity->setCastShadows(true);
     return wrap_pointer(env,entity_resource,(void*)entity);
 }
@@ -177,6 +175,21 @@ static ERL_NIF_TERM set_node_position(ErlNifEnv* env, int argc, const ERL_NIF_TE
     return enif_make_atom(env,"ok");
 }
 
+static ERL_NIF_TERM attach_entity_to_node(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    Entity *entity = (Entity *)unwrap_pointer(env,entity_resource,argv[0]);
+    SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[1]);
+    node->attachObject(entity);
+    return enif_make_atom(env,"ok");
+}
+
+static ERL_NIF_TERM attach_entity_to_bone(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    Entity *parent = (Entity *)unwrap_pointer(env,entity_resource,argv[0]);
+    Entity *entity = (Entity *)unwrap_pointer(env,entity_resource,argv[1]);
+    char boneName[200];
+    enif_get_atom(env,argv[2],boneName,200);
+    parent->attachObjectToBone(boneName,entity);
+    return enif_make_atom(env,"ok");
+}
 
 static ERL_NIF_TERM set_camera_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     camera->setPosition(get_vector(env, &argv[0]));
@@ -291,8 +304,9 @@ static ErlNifFunc nif_funcs[] =
     {"render_frame", 0, render_frame},
     {"destroy_ogre", 0, destroy_ogre},
     {"key_down", 1, key_down},
-    {"create_entity", 2, create_entity},
+    {"create_entity", 1, create_entity},
     {"create_scenenode", 0, create_scenenode},
+    {"attach_entity_to_node", 2, attach_entity_to_node},
     {"set_node_position", 2, set_node_position},
     {"set_node_orientation", 2, set_node_orientation},
     {"get_node_position", 1, get_node_position},
@@ -311,7 +325,8 @@ static ErlNifFunc nif_funcs[] =
     {"set_animationstate_enabled", 2, set_animationstate_enabled},
     {"set_animationstate_loop", 2, set_animationstate_loop},
     {"add_animationstate_time", 2, add_animationstate_time},
-    {"set_ambient_light", 1, set_ambient_light}
+    {"set_ambient_light", 1, set_ambient_light},
+    {"attach_entity_to_bone", 3, attach_entity_to_bone}
 };
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);
