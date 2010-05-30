@@ -22,6 +22,8 @@ OIS::InputManager* inputManager;
 static ErlNifResourceType* node_resource;
 static ErlNifResourceType* entity_resource;
 static ErlNifResourceType* animationstate_resource;
+static ErlNifResourceType* overlay_resource;
+static ErlNifResourceType* overlaycontainer_resource;
 
 static ERL_NIF_TERM hello(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -290,6 +292,110 @@ static ERL_NIF_TERM set_ambient_light(ErlNifEnv* env, int argc, const ERL_NIF_TE
     return enif_make_atom(env, "ok");
 }
 
+
+static ERL_NIF_TERM create_overlay(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char name[200];
+    enif_get_atom(env,argv[0], name,200);
+    Overlay *overlay = Ogre::OverlayManager::getSingletonPtr()->create(name);
+    return wrap_pointer(env,overlay_resource,(void*)overlay);
+}
+
+static ERL_NIF_TERM create_overlay_container(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char name[200];
+    char type[200];
+    enif_get_atom(env,argv[0], type,200);
+    enif_get_atom(env,argv[1], name,200);
+    OverlayContainer *con = static_cast<OverlayContainer*>(Ogre::OverlayManager::getSingletonPtr()->createOverlayElement(type,name));
+    return wrap_pointer(env,overlaycontainer_resource,(void*)con);
+}
+
+static ERL_NIF_TERM set_overlay_container_dimensions(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayContainer *con = (OverlayContainer*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    double x, y;
+    enif_get_double(env, argv[1], &x);
+    enif_get_double(env, argv[2], &y);
+    con->setDimensions(x, y);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM set_overlay_container_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayContainer *con = (OverlayContainer*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    double x, y;
+    enif_get_double(env, argv[1], &x);
+    enif_get_double(env, argv[2], &y);
+    con->setPosition(x, y);
+    return enif_make_atom(env, "ok");
+}
+
+
+static ERL_NIF_TERM add_overlay_container(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    Overlay *overlay = (Overlay*)unwrap_pointer(env,overlay_resource,argv[0]);
+    OverlayContainer *con = (OverlayContainer*)unwrap_pointer(env,overlaycontainer_resource,argv[1]);
+    overlay->add2D(con);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM show_overlay(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    Overlay *overlay = (Overlay*)unwrap_pointer(env,overlay_resource,argv[0]);
+    overlay->show();
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM set_overlay_element_metrics_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    int metrics;
+    enif_get_int(env, argv[1], &metrics);
+    elem->setMetricsMode((Ogre::GuiMetricsMode)(metrics));
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM set_overlay_element_width(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    double x;
+    enif_get_double(env, argv[1], &x);
+    elem->setWidth(x);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM set_overlay_element_height(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    double x;
+    enif_get_double(env, argv[1], &x);
+    elem->setHeight(x);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM set_overlay_element_parameter(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    char pname[200];
+    char pval[200];
+    enif_get_atom(env,argv[1], pname,200);
+    enif_get_atom(env,argv[2], pval,200);
+    elem->setParameter(pname, pval);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM set_overlay_element_colour(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    Vector3 v = get_vector(env, &argv[1]);
+    elem->setColour(ColourValue(v.x, v.y, v.z));
+    return enif_make_atom(env, "ok");
+}
+static ERL_NIF_TERM set_overlay_element_caption(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    char pval[300];
+    enif_get_atom(env,argv[1], pval,300);
+    elem->setCaption(pval);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM add_overlay_container_child(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    OverlayContainer *paren = (OverlayContainer*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    OverlayElement *chld = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[1]);
+    paren->addChild(chld);
+    return enif_make_atom(env, "ok");
+}
+
 static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char message[255];
     enif_get_string(env,argv[0],message,255,ERL_NIF_LATIN1);
@@ -326,14 +432,31 @@ static ErlNifFunc nif_funcs[] =
     {"set_animationstate_loop", 2, set_animationstate_loop},
     {"add_animationstate_time", 2, add_animationstate_time},
     {"set_ambient_light", 1, set_ambient_light},
-    {"attach_entity_to_bone", 3, attach_entity_to_bone}
+    {"attach_entity_to_bone", 3, attach_entity_to_bone},
+    {"create_overlay", 1, create_overlay},
+    {"create_overlay_container", 2, create_overlay_container},
+    {"set_overlay_container_dimensions", 3, set_overlay_container_dimensions},
+    {"set_overlay_container_position", 3, set_overlay_container_position},
+    {"add_overlay_container", 2, add_overlay_container},
+    {"show_overlay", 1, show_overlay},
+    {"set_overlay_element_metrics_mode", 2, set_overlay_element_metrics_mode},
+    {"set_overlay_element_width", 2, set_overlay_element_width},
+    {"set_overlay_element_height", 2, set_overlay_element_height},
+    {"set_overlay_element_parameter", 3, set_overlay_element_parameter},
+    {"set_overlay_element_colour", 2, set_overlay_element_colour},
+    {"set_overlay_element_caption", 2, set_overlay_element_caption},
+    {"add_overlay_container_child", 2, add_overlay_container_child}
 };
+
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     node_resource = enif_open_resource_type(env,"Ogre Node",NULL,ERL_NIF_RT_CREATE,NULL);
     entity_resource = enif_open_resource_type(env,"Ogre Entity",NULL,ERL_NIF_RT_CREATE,NULL);
     animationstate_resource = enif_open_resource_type(env,"Ogre AnimationState",NULL,ERL_NIF_RT_CREATE,NULL);
+    overlay_resource = enif_open_resource_type(env,"Ogre Overlay",NULL,ERL_NIF_RT_CREATE,NULL);
+    overlaycontainer_resource = enif_open_resource_type(env,"Ogre OverlayContainer",NULL,ERL_NIF_RT_CREATE,NULL);
     return 0;
 }
+
 extern "C" {
 ERL_NIF_INIT(ogre,nif_funcs,load,NULL,NULL,NULL)
 }
