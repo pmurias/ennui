@@ -5,6 +5,7 @@ extern "C" {
 }
 #include <OGRE/Ogre.h>
 #include <OIS/OIS.h>
+#include <OGRE/OgreTextAreaOverlayElement.h>
 
 using namespace Ogre;
 
@@ -117,6 +118,7 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     int top, left;
     window->getMetrics(width, height, depth, left, top);
     const OIS::MouseState &ms = mouse->getMouseState(); ms.width = width; ms.height = height;
+
     return enif_make_atom(env, "ok");
 }
 
@@ -305,12 +307,12 @@ static ERL_NIF_TERM create_overlay_container(ErlNifEnv* env, int argc, const ERL
     char type[200];
     enif_get_atom(env,argv[0], type,200);
     enif_get_atom(env,argv[1], name,200);
-    OverlayContainer *con = static_cast<OverlayContainer*>(Ogre::OverlayManager::getSingletonPtr()->createOverlayElement(type,name));
+    OverlayElement *con = (Ogre::OverlayManager::getSingletonPtr()->createOverlayElement(type,name));
     return wrap_pointer(env,overlaycontainer_resource,(void*)con);
 }
 
 static ERL_NIF_TERM set_overlay_container_dimensions(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    OverlayContainer *con = (OverlayContainer*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    OverlayElement *con = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
     double x, y;
     enif_get_double(env, argv[1], &x);
     enif_get_double(env, argv[2], &y);
@@ -319,7 +321,7 @@ static ERL_NIF_TERM set_overlay_container_dimensions(ErlNifEnv* env, int argc, c
 }
 
 static ERL_NIF_TERM set_overlay_container_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    OverlayContainer *con = (OverlayContainer*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    OverlayElement *con = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
     double x, y;
     enif_get_double(env, argv[1], &x);
     enif_get_double(env, argv[2], &y);
@@ -342,10 +344,11 @@ static ERL_NIF_TERM show_overlay(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 }
 
 static ERL_NIF_TERM set_overlay_element_metrics_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    printf("ELEM: DUPA\n");
     OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
     int metrics;
     enif_get_int(env, argv[1], &metrics);
-    elem->setMetricsMode((Ogre::GuiMetricsMode)(metrics));
+    elem->setMetricsMode((Ogre::GMM_PIXELS));
     return enif_make_atom(env, "ok");
 }
 
@@ -375,6 +378,13 @@ static ERL_NIF_TERM set_overlay_element_parameter(ErlNifEnv* env, int argc, cons
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM set_overlay_element_fontname(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    TextAreaOverlayElement *elem = (TextAreaOverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
+    char pname[200];
+    enif_get_atom(env,argv[1], pname,200);
+    elem->setFontName(pname);
+    return enif_make_atom(env, "ok");
+}
 static ERL_NIF_TERM set_overlay_element_colour(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
     Vector3 v = get_vector(env, &argv[1]);
@@ -383,8 +393,8 @@ static ERL_NIF_TERM set_overlay_element_colour(ErlNifEnv* env, int argc, const E
 }
 static ERL_NIF_TERM set_overlay_element_caption(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
-    char pval[300];
-    enif_get_atom(env,argv[1], pval,300);
+    char pval[255];
+    enif_get_string(env,argv[1],pval,255,ERL_NIF_LATIN1);
     elem->setCaption(pval);
     return enif_make_atom(env, "ok");
 }
@@ -395,6 +405,7 @@ static ERL_NIF_TERM add_overlay_container_child(ErlNifEnv* env, int argc, const 
     paren->addChild(chld);
     return enif_make_atom(env, "ok");
 }
+
 
 static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char message[255];
@@ -445,7 +456,8 @@ static ErlNifFunc nif_funcs[] =
     {"set_overlay_element_parameter", 3, set_overlay_element_parameter},
     {"set_overlay_element_colour", 2, set_overlay_element_colour},
     {"set_overlay_element_caption", 2, set_overlay_element_caption},
-    {"add_overlay_container_child", 2, add_overlay_container_child}
+    {"add_overlay_container_child", 2, add_overlay_container_child},
+    {"set_overlay_element_fontname", 2, set_overlay_element_fontname},
 };
 
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {

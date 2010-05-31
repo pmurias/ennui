@@ -1,50 +1,51 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_metrics_mode/2,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
 
-init_ogre() -> "NIF library not loaded".
-destroy_ogre() -> "NIF library not loaded".
-capture_input() -> "NIF library not loaded".
-render_frame() -> "NIF library not loaded".
-key_down(_) -> "NIF library not loaded".
-create_scenenode() -> "NIF library not loaded".
-create_entity(_) -> "NIF library not loaded".
-attach_entity_to_node(_,_) -> "NIF library not loaded".
-set_node_position(_,_) -> "NIF library not loaded".
-set_node_orientation(_,_) -> "NIF library not loaded".
-get_node_position(_) -> "NIF library not loaded".
-get_node_orientation(_) -> "NIF library not loaded".
-get_average_fps() -> "NIF library not loaded".
-log_message(_) -> "NIF library not loaded".
-set_camera_position(_) -> "NIF library not loaded".
-set_camera_orientation(_) -> "NIF library not loaded".
-get_camera_position() -> "NIF library not loaded".
-get_camera_orientation() -> "NIF library not loaded".
-get_rotation_to(_,_) -> "NIF library not loaded".
-mult_quaternion_quaternion(_,_) -> "NIF library not loaded".
-mult_quaternion_vector(_,_) -> "NIF library not loaded".
-get_quaternion_inverse(_) -> "NIF library not loaded".
-get_animationstate(_,_) -> "NIF library not loaded".
-set_animationstate_enabled(_,_) -> "NIF library not loaded".
-set_animationstate_loop(_,_) -> "NIF library not loaded".
-add_animationstate_time(_,_) -> "NIF library not loaded".
-set_ambient_light(_) -> "NIF library not loaded".
-attach_entity_to_bone(_,_,_) -> "NIF library not loaded".
-create_overlay(_) -> "NIF library not loaded".
-create_overlay_container(_,_) -> "NIF library not loaded".
-set_overlay_container_dimensions(_,_,_) -> "NIF library not loaded".
-set_overlay_container_position(_,_,_) -> "NIF library not loaded".
-add_overlay_container(_,_) -> "NIF library not loaded".
-show_overlay(_) -> "NIF library not loaded".
-set_overlay_element_metrics_mode(_,_) -> "NIF library not loaded".
-set_overlay_element_width(_,_) -> "NIF library not loaded".
-set_overlay_element_height(_,_) -> "NIF library not loaded".
-set_overlay_element_colour(_,_) -> "NIF library not loaded".
-set_overlay_element_parameter(_,_,_) -> "NIF library not loaded".
-set_overlay_element_caption(_,_) -> "NIF library not loaded".
-add_overlay_container_child(_,_) -> "NIF library not loaded".
+init_ogre() -> throw('nif library not loaded').
+destroy_ogre() -> throw('nif library not loaded').
+capture_input() -> throw('nif library not loaded').
+render_frame() -> throw('nif library not loaded').
+key_down(_) -> throw('nif library not loaded').
+create_scenenode() -> throw('nif library not loaded').
+create_entity(_) -> throw('nif library not loaded').
+attach_entity_to_node(_,_) -> throw('nif library not loaded').
+set_node_position(_,_) -> throw('nif library not loaded').
+set_node_orientation(_,_) -> throw('nif library not loaded').
+get_node_position(_) -> throw('nif library not loaded').
+get_node_orientation(_) -> throw('nif library not loaded').
+get_average_fps() -> throw('nif library not loaded').
+log_message(_) -> throw('nif library not loaded').
+set_camera_position(_) -> throw('nif library not loaded').
+set_camera_orientation(_) -> throw('nif library not loaded').
+get_camera_position() -> throw('nif library not loaded').
+get_camera_orientation() -> throw('nif library not loaded').
+get_rotation_to(_,_) -> throw('nif library not loaded').
+mult_quaternion_quaternion(_,_) -> throw('nif library not loaded').
+mult_quaternion_vector(_,_) -> throw('nif library not loaded').
+get_quaternion_inverse(_) -> throw('nif library not loaded').
+get_animationstate(_,_) -> throw('nif library not loaded').
+set_animationstate_enabled(_,_) -> throw('nif library not loaded').
+set_animationstate_loop(_,_) -> throw('nif library not loaded').
+add_animationstate_time(_,_) -> throw('nif library not loaded').
+set_ambient_light(_) -> throw('nif library not loaded').
+attach_entity_to_bone(_,_,_) -> throw('nif library not loaded').
+create_overlay(_) -> throw('nif library not loaded').
+create_overlay_container(_,_) -> throw('nif library not loaded').
+set_overlay_container_dimensions(_,_,_) -> throw('nif library not loaded').
+set_overlay_container_position(_,_,_) -> throw('nif library not loaded').
+add_overlay_container(_,_) -> throw('nif library not loaded').
+show_overlay(_) -> throw('nif library not loaded').
+set_overlay_element_metrics_mode(_,_) -> throw('nif library not loaded').
+set_overlay_element_width(_,_) -> throw('nif library not loaded').
+set_overlay_element_height(_,_) -> throw('nif library not loaded').
+set_overlay_element_colour(_,_) -> throw('nif library not loaded').
+set_overlay_element_parameter(_,_,_) -> throw('nif library not loaded').
+set_overlay_element_caption(_,_) -> throw('nif library not loaded').
+add_overlay_container_child(_,_) -> throw('nif library not loaded').
+set_overlay_element_fontname(_,_) -> throw('nif library not loaded').
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node,entity}).
 
@@ -60,6 +61,27 @@ create_player(ID, Mesh) ->
 
 play(ID, Clients) ->
     init_ogre(),
+    
+    Overlay = create_overlay('ov1'),
+    Panel = create_overlay_container('Panel', 'cont1'),
+    set_overlay_container_dimensions(Panel, 1.0, 1.0),
+    set_overlay_container_position(Panel, 0.0, 0.0),
+    add_overlay_container(Overlay, Panel),
+    show_overlay(Overlay),
+
+    TextBox = create_overlay_container('TextArea', 'TextArea'),
+    set_overlay_element_metrics_mode(TextBox, 1),
+    set_overlay_container_dimensions(TextBox, 100.0, 30.0),
+    set_overlay_container_position(TextBox, 10.0, 10.0),
+    set_overlay_element_width(TextBox, 100.0),
+    set_overlay_element_height(TextBox, 30.0),
+    set_overlay_element_parameter(TextBox, 'font_name', 'Liberation'),
+    set_overlay_element_parameter(TextBox, 'char_height', '32'),
+    set_overlay_element_colour(TextBox, {0.0, 0.0, 0.0}),
+    set_overlay_element_caption(TextBox, "Simple text output"),
+    add_overlay_container_child(Panel, TextBox),
+
+
     set_ambient_light({0.7, 0.7, 0.7}),
     GrassNode = create_scenenode(),
     set_camera_position({0.0, 2.8, 0.0}),
