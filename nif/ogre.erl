@@ -49,6 +49,38 @@ set_overlay_element_fontname(_,_) -> throw('nif library not loaded').
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node,entity}).
 
+init_text_overlay() ->
+    Overlay = create_overlay('ov1'),
+    Panel = create_overlay_container('Panel', 'cont1'),
+    set_overlay_container_dimensions(Panel, 1.0, 1.0),
+    set_overlay_container_position(Panel, 0.0, 0.0),
+    add_overlay_container(Overlay, Panel),
+    show_overlay(Overlay),
+    Panel.
+
+create_textbox(Panel,Id, X,Y, W, H, Colour, InitialText) ->
+    TextBox = create_overlay_container('TextArea', Id),
+    set_overlay_element_metrics_mode(TextBox, 1),
+    set_overlay_container_dimensions(TextBox, W, H),
+    set_overlay_container_position(TextBox, X, Y),
+    set_overlay_element_width(TextBox, W),
+    set_overlay_element_height(TextBox, H),
+    set_overlay_element_parameter(TextBox, 'font_name', 'Liberation'),
+    set_overlay_element_parameter(TextBox, 'char_height', '16'),
+    set_overlay_element_colour(TextBox, Colour),
+    set_overlay_element_caption(TextBox, InitialText),
+    add_overlay_container_child(Panel, TextBox),
+    TextBox.
+
+
+create_console(Panel, Size) ->
+    lists:map((fun(I) -> create_textbox(Panel, list_to_atom("Console"++[I]), 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, "") end), lists:seq(0, Size)).
+
+log_console([Tb|Console], Format, Args) ->
+    Str = lists:flatten(io_lib:format(Format, Args)),
+    set_overlay_element_caption(Tb, Str),
+    Console++[Tb].
+    
 create_player(ID, Mesh) ->
     Node = create_scenenode(),
     Entity=create_entity(Mesh),
@@ -61,26 +93,8 @@ create_player(ID, Mesh) ->
 
 play(ID, Clients) ->
     init_ogre(),
-    
-    Overlay = create_overlay('ov1'),
-    Panel = create_overlay_container('Panel', 'cont1'),
-    set_overlay_container_dimensions(Panel, 1.0, 1.0),
-    set_overlay_container_position(Panel, 0.0, 0.0),
-    add_overlay_container(Overlay, Panel),
-    show_overlay(Overlay),
-
-    TextBox = create_overlay_container('TextArea', 'TextArea'),
-    set_overlay_element_metrics_mode(TextBox, 1),
-    set_overlay_container_dimensions(TextBox, 100.0, 30.0),
-    set_overlay_container_position(TextBox, 10.0, 10.0),
-    set_overlay_element_width(TextBox, 100.0),
-    set_overlay_element_height(TextBox, 30.0),
-    set_overlay_element_parameter(TextBox, 'font_name', 'Liberation'),
-    set_overlay_element_parameter(TextBox, 'char_height', '32'),
-    set_overlay_element_colour(TextBox, {0.0, 0.0, 0.0}),
-    set_overlay_element_caption(TextBox, "Simple text output"),
-    add_overlay_container_child(Panel, TextBox),
-
+    Panel = init_text_overlay(),
+    Con = create_console(Panel, 20),
 
     set_ambient_light({0.7, 0.7, 0.7}),
     GrassNode = create_scenenode(),
@@ -91,7 +105,7 @@ play(ID, Clients) ->
     attach_entity_to_node(GrassEntity, GrassNode),
     register(ID, self()),
     Players = [create_player(p0, 'Policeman.mesh'),create_player(p1, 'Policeman.mesh')],
-    play_loop(1,ID, Players, {false,false,false,false}, [self()|Clients]),
+    play_loop(1,ID, Players, {false,false,false,false}, [self()|Clients], Con),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -190,13 +204,14 @@ wait_for_player(Player,Frame) ->
     receive 
         {frameDone,ID,Frame} -> ok
     end.
-play_loop(Frame,LocalPlayerID,Players,InputState,Clients) ->
+play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     capture_input(),
     render_frame(),
     NewPlayers = lists:map(fun handle_player/1,Players),
     NewInputState = handle_input(LocalPlayerID,InputState,Clients),
     lists:foreach(fun player_logic/1,NewPlayers),
     LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
+
 
     LPNode = LocalPlayer#player.node,
     {X,Y,Z} = get_node_position(LPNode),
@@ -208,13 +223,15 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients) ->
     {CamMovementX, CamMovementY, CamMovementZ} = mult_quaternion_vector(NodeOrientation, {0.0, 0.0, -6.0}),
     set_camera_position({X+CamMovementX,Y+CamMovementY+3.2,Z+CamMovementZ}),
 
+    NewConsole = log_console(Console, "FPS: ~p (~p,~p,~p)", [get_average_fps(),X,Y,Z]),
+
     Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> 
             send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
             [Fst|_] = NewPlayers,
             lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, [Fst]),
-            play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients);
+            play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
         true -> ok
     end.
 

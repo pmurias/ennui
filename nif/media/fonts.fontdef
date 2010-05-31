@@ -2,7 +2,7 @@
 Liberation
 {
     type truetype
-    source bluehigh.ttf
-    size 32
-    resolution 72
+    source Liberation.ttf
+    size 16
+    resolution 129
 }
