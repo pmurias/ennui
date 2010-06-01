@@ -202,7 +202,7 @@ find_localplayer(Players,LocalPlayerID) ->
 
 wait_for_player(Player,Frame) ->
     ID = Player#player.id,
-    log("waiting for player ~p ~s",[ID,Frame,?VERSION]),
+    log("waiting for player ~p ~p ~p ~s",[ID,Frame,?VERSION]),
     receive 
         {frameDone,ID,Frame} -> ok
     after 2000 -> throw('other player disconnected')
@@ -232,9 +232,9 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     case Esc of
         false -> 
            send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
-           log("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
-            NewConsole = log_console(Console, "waiting for players ~p ~s", [Frame,?VERSION]),
-            log("waiting for players ~p ~s",[Frame,?VERSION]),
+           log("sending to clients ~w ~w ~w",[{frameDone,LocalPlayerID,Frame}]),
+            NewConsole = log_console(Console, "waiting for players ~w ~w ~s", [Frame,?VERSION]),
+            log("waiting for players ~w ~w ~s",[Frame,?VERSION]),
             [Fst|_] = NewPlayers,
            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
