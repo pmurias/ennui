@@ -203,6 +203,7 @@ wait_for_player(Player,Frame) ->
     ID = Player#player.id,
     receive 
         {frameDone,ID,Frame} -> ok
+    after 2000 -> throw('other player disconnected')
     end.
 play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     capture_input(),
@@ -223,14 +224,15 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     {CamMovementX, CamMovementY, CamMovementZ} = mult_quaternion_vector(NodeOrientation, {0.0, 0.0, -6.0}),
     set_camera_position({X+CamMovementX,Y+CamMovementY+3.2,Z+CamMovementZ}),
 
-    NewConsole = log_console(Console, "FPS: ~p (~p,~p,~p)", [get_average_fps(),X,Y,Z]),
+%    NewConsole = log_console(Console, "FPS: ~p (~p,~p,~p)", [get_average_fps(),X,Y,Z]),
 
     Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> 
             send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
+            NewConsole = log_console(Console, "waiting for players ~p", [Frame]),
             [Fst|_] = NewPlayers,
-            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, [Fst]),
+            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
         true -> ok
     end.
