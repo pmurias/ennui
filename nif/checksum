@@ -1,0 +1,6 @@
+use v5.10;
+use Digest::MD4 qw(md4_hex);
+use File::Slurp qw(slurp);
+say "-DVERSION=\"",md4_hex(slurp('ogre.erl')),"\"";
+
+
