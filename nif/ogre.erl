@@ -95,6 +95,7 @@ play(ID, Clients) ->
     init_ogre(),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
+    create_textbox(Panel, 'ver', 10.0, 580.0, 500.0, 30.0, {1.0, 0.0, 0.0}, ?VERSION),
 
     set_ambient_light({0.7, 0.7, 0.7}),
     GrassNode = create_scenenode(),
@@ -229,10 +230,10 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> 
-            send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
+ %           send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
             NewConsole = log_console(Console, "waiting for players ~p", [Frame]),
             [Fst|_] = NewPlayers,
-            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
+ %           lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
         true -> ok
     end.

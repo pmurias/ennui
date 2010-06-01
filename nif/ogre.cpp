@@ -344,7 +344,6 @@ static ERL_NIF_TERM show_overlay(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 }
 
 static ERL_NIF_TERM set_overlay_element_metrics_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    printf("ELEM: DUPA\n");
     OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
     int metrics;
     enif_get_int(env, argv[1], &metrics);
