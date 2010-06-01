@@ -202,7 +202,7 @@ find_localplayer(Players,LocalPlayerID) ->
 
 wait_for_player(Player,Frame) ->
     ID = Player#player.id,
-    log("waiting for player ~p ~p ~p ~s",[ID,Frame,?VERSION]),
+    log("waiting for player ~p ~p ~p",[ID,Frame,?VERSION]),
     receive 
         {frameDone,ID,Frame} -> ok
     after 2000 -> throw('other player disconnected')
