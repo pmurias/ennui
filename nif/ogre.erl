@@ -235,6 +235,6 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
             [Fst|_] = NewPlayers,
  %           lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
-        true -> ok
+        true -> halt.
     end.
 
