@@ -232,7 +232,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     case Esc of
         false -> 
            send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
-           log("sending to clients ~w ~w ~w",[{frameDone,LocalPlayerID,Frame}]),
+           log("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
             NewConsole = log_console(Console, "waiting for players ~w ~w ~s", [Frame,?VERSION]),
             log("waiting for players ~w ~w ~s",[Frame,?VERSION]),
             [Fst|_] = NewPlayers,
