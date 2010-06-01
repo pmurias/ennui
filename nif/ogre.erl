@@ -231,10 +231,10 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     case Esc of
         false -> 
            send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
-            NewConsole = log_console(Console, "waiting for players ~p", [Frame]),
+            NewConsole = log_console(Console, "waiting for players ~p ~s", [Frame,?VERSION]),
             [Fst|_] = NewPlayers,
            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
-        true -> halt.
+        true -> halt
     end.
 
