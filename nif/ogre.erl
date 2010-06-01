@@ -78,7 +78,7 @@ create_console(Panel, Size) ->
 
 log_console([Tb|Console], Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
-    set_overlay_element_caption(Tb, Str),
+    set_overlay_element_caption(Tb, list_to_atom(Str)),
     Console++[Tb].
     
 create_player(ID, Mesh) ->
