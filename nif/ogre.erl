@@ -74,7 +74,7 @@ create_textbox(Panel,Id, X,Y, W, H, Colour, InitialText) ->
 
 
 create_console(Panel, Size) ->
-    lists:map((fun(I) -> create_textbox(Panel, list_to_atom("Console"++[I]), 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, "") end), lists:seq(0, Size)).
+    lists:map((fun(I) -> create_textbox(Panel, list_to_atom("Console"++[I]), 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, '_') end), lists:seq(0, Size)).
 
 log_console([Tb|Console], Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
@@ -95,7 +95,7 @@ play(ID, Clients) ->
     init_ogre(),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
-    create_textbox(Panel, 'ver', 10.0, 580.0, 500.0, 30.0, {1.0, 0.0, 0.0}, ?VERSION),
+    create_textbox(Panel, 'ver', 10.0, 580.0, 500.0, 30.0, {1.0, 0.0, 0.0}, list_to_atom(?VERSION)),
 
     set_ambient_light({0.7, 0.7, 0.7}),
     GrassNode = create_scenenode(),
@@ -117,7 +117,7 @@ play(ID, Clients) ->
 
 log(Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
-    log_message(Str).
+    log_message(list_to_atom(Str)).
 
 handle_input(ID,{OldLeft,OldRight,OldUp,OldDown},Clients) ->
     Left = key_down(?KC_LEFT),
