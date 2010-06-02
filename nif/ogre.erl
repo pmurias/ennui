@@ -233,12 +233,19 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> 
-           send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
+            case Clients of 
+                [_] -> ok;
+                _ -> send_to_clients(Clients,{frameDone,LocalPlayerID,Frame})
+            end,
            log("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
             NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
             log("waiting for players ~w ~s",[Frame,?VERSION]),
             [Fst|_] = NewPlayers,
-           lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
+
+            case Clients of 
+                [_] -> ok;
+                _ -> lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers)
+            end,
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
         true -> halt
     end.
