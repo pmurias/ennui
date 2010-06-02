@@ -149,10 +149,10 @@ send_to_clients(Clients,Event) -> lists:foreach((fun(Client)->Client ! Event end
 handle_player(Player) ->
     ID = Player#player.id,
     receive
-        {ID,keyChange,?KC_LEFT,State}  -> Player#player{leftDown=State};
-        {ID,keyChange,?KC_RIGHT,State} -> Player#player{rightDown=State};
-        {ID,keyChange,?KC_DOWN,State}  -> Player#player{downDown=State};
-        {ID,keyChange,?KC_UP,State} -> Player#player{upDown=State}
+        {ID,keyChange,?KC_LEFT,State}  -> handle_player(Player#player{leftDown=State});
+        {ID,keyChange,?KC_RIGHT,State} -> handle_player(Player#player{rightDown=State});
+        {ID,keyChange,?KC_DOWN,State}  -> handle_player(Player#player{downDown=State});
+        {ID,keyChange,?KC_UP,State} -> handle_player(Player#player{upDown=State})
     after
         0 -> Player
     end.
