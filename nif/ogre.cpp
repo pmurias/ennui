@@ -423,8 +423,9 @@ static ERL_NIF_TERM add_overlay_container_child(ErlNifEnv* env, int argc, const 
 
 
 static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    //char message[255];
-    //enif_get_atom(env,argv[0],message,255);
+    char message[255];
+    enif_get_atom(env,argv[0],message,255);
+    printf("%s\n",message);
     //LogManager::getSingleton().getDefaultLog()->logMessage(message);
     return enif_make_atom(env, "ok");
 }
