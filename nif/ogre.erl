@@ -213,6 +213,21 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     capture_input(),
     render_frame(),
     NewPlayers = lists:map(fun handle_player/1,Players),
+
+    case Clients of 
+        [_] -> ok;
+        _ -> send_to_clients(Clients,{frameDone,LocalPlayerID,Frame})
+    end,
+    og("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
+    NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
+    log("waiting for players ~w ~s",[Frame,?VERSION]),
+    [Fst|_] = NewPlayers,
+
+    case Clients of 
+        [_] -> ok;
+        _ -> lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers)
+    end,
+
     NewInputState = handle_input(LocalPlayerID,InputState,Clients),
     lists:foreach(fun player_logic/1,NewPlayers),
     LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
@@ -233,19 +248,6 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> 
-            case Clients of 
-                [_] -> ok;
-                _ -> send_to_clients(Clients,{frameDone,LocalPlayerID,Frame})
-            end,
-           log("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
-            NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
-            log("waiting for players ~w ~s",[Frame,?VERSION]),
-            [Fst|_] = NewPlayers,
-
-            case Clients of 
-                [_] -> ok;
-                _ -> lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers)
-            end,
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
         true -> halt
     end.
