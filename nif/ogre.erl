@@ -97,7 +97,7 @@ play(ID, Clients) ->
     %add_compositor('Bloom'),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
-    create_textbox(Panel, 'ver', 10.0, 580.0, 500.0, 30.0, {1.0, 0.0, 0.0}, list_to_atom(?VERSION)),
+    create_textbox(Panel, 'ver', 10.0, 480.0, 500.0, 30.0, {1.0, 0.0, 0.0}, list_to_atom(?VERSION)),
 
     set_ambient_light({0.7, 0.7, 0.7}),
     GrassNode = create_scenenode(),
