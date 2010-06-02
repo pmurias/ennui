@@ -121,6 +121,8 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     window->getMetrics(width, height, depth, left, top);
     const OIS::MouseState &ms = mouse->getMouseState(); ms.width = width; ms.height = height;
 
+    Ogre::CompositorManager::getSingleton().initialise();
+
     return enif_make_atom(env, "ok");
 }
 
@@ -417,6 +419,16 @@ static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM add_compositor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char name[255];
+    enif_get_atom(env,argv[0],name,255);
+    printf("Add Compositor: %s\n", name);
+    Ogre::CompositorManager::getSingleton().addCompositor(viewPort,name);
+    Ogre::CompositorManager::getSingleton().setCompositorEnabled(viewPort, name, true);
+    return enif_make_atom(env, "ok");
+}
+
+
 static ErlNifFunc nif_funcs[] =
 {
     {"init_ogre", 0, init_ogre},
@@ -461,6 +473,7 @@ static ErlNifFunc nif_funcs[] =
     {"set_overlay_element_caption", 2, set_overlay_element_caption},
     {"add_overlay_container_child", 2, add_overlay_container_child},
     {"set_overlay_element_fontname", 2, set_overlay_element_fontname},
+    {"add_compositor", 1, add_compositor}
 };
 
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
