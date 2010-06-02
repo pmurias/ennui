@@ -186,11 +186,9 @@ player_logic(Player) ->
     end.
 
 move_node(Node,By) ->
- %   {X,Y,Z} = get_node_position(Node),
-    {X,Y,Z} = {0.0, 0.0, 0.0},
+   {X,Y,Z} = get_node_position(Node),
     Orientation = get_node_orientation(Node),
-%    {ByX, ByY, ByZ} = mult_quaternion_vector(Orientation, By),
-    {ByX, ByY, ByZ} = { X,Y,Z},
+   {ByX, ByY, ByZ} = mult_quaternion_vector(Orientation, By),
     set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
 rotate_node(Node, By) ->
@@ -219,15 +217,13 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
 
 
     LPNode = LocalPlayer#player.node,
-%    {X,Y,Z} = get_node_position(LPNode),
-    {X,Y,Z} = {0.0, 0.0, 0.0}, 
+    {X,Y,Z} = get_node_position(LPNode),
     NodeOrientation = get_node_orientation(LPNode),
     CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
     Camera180Rotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}),
     CameraOrientation = mult_quaternion_quaternion(mult_quaternion_quaternion(NodeOrientation, Camera180Rotation), CameraDownRotation),
     set_camera_orientation(CameraOrientation),
- %   {CamMovementX, CamMovementY, CamMovementZ} = mult_quaternion_vector(NodeOrientation, {0.0, 0.0, -6.0}),
-    {CamMovementX, CamMovementY, CamMovementZ} = {0.0, 0.0, 0.0},
+    {CamMovementX, CamMovementY, CamMovementZ} = mult_quaternion_vector(NodeOrientation, {0.0, 0.0, -6.0}),
     set_camera_position({X+CamMovementX,Y+CamMovementY+3.2,Z+CamMovementZ}),
 
 %    NewConsole = log_console(Console, "FPS: ~p (~p,~p,~p)", [get_average_fps(),X,Y,Z]),
