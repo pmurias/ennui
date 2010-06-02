@@ -75,7 +75,7 @@ create_textbox(Panel,Id, X,Y, W, H, Colour, InitialText) ->
 
 
 create_console(Panel, Size) ->
-    lists:map((fun(I) -> create_textbox(Panel, list_to_atom("Console"++[I]), 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, '_') end), lists:seq(0, Size)).
+    lists:map((fun(I) -> create_textbox(Panel, list_to_atom("Console"++[I]), 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, 'tekst domyslny') end), lists:seq(0, Size)).
 
 log_console([Tb|Console], Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
@@ -235,7 +235,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
         false -> 
            send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
            log("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
-            NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
+            NewConsole = Console,%log_console(Console, "FPS ~w", [get_average_fps()]),
             log("waiting for players ~w ~s",[Frame,?VERSION]),
             [Fst|_] = NewPlayers,
            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
