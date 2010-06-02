@@ -220,7 +220,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     end,
     case Clients of 
         [_] -> ok;
-        _ -> lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers)
+        _ -> lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, Players)
     end,
     NewPlayers = lists:map(fun handle_player/1,Players),
 
