@@ -22,6 +22,6 @@ void main()
     sharp = texture2D( RT, texCoord);
     blur = texture2D( Blur1, texCoord);
     
-    gl_FragColor = ( (blur * BlurWeight) + (sharp * OriginalImageWeight) );
+    gl_FragColor = ( (blur * BlurWeight) * (sharp * OriginalImageWeight) );
     //gl_FragColor = vec4(0);
 }
