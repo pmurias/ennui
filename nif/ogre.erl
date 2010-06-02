@@ -205,7 +205,7 @@ wait_for_player(Player,Frame) ->
     log("waiting for player ~p ~p ~p",[ID,Frame,?VERSION]),
     receive 
         {frameDone,ID,Frame} -> ok
-    after 2000 -> throw('other player disconnected')
+    after 2000 -> halt().
     end.
 play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     capture_input(),
@@ -238,6 +238,6 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
             [Fst|_] = NewPlayers,
            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
-        true -> halt
+        true -> halt()
     end.
 
