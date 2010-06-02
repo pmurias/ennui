@@ -205,7 +205,7 @@ wait_for_player(Player,Frame) ->
     log("waiting for player ~p ~p ~p",[ID,Frame,?VERSION]),
     receive 
         {frameDone,ID,Frame} -> ok
-    after 2000 -> halt()
+    after 500 -> halt()
     end.
 play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     capture_input(),
