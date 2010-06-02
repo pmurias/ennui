@@ -218,7 +218,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
         [_] -> ok;
         _ -> send_to_clients(Clients,{frameDone,LocalPlayerID,Frame})
     end,
-    og("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
+    log("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
     NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
     log("waiting for players ~w ~s",[Frame,?VERSION]),
     [Fst|_] = NewPlayers,
