@@ -55,9 +55,9 @@ static Vector3 get_vector(ErlNifEnv *env, const ERL_NIF_TERM *arg) {
 }
 
 static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-//    LogManager *lm = new LogManager();
-//    lm->createLog("./Ogre.log0", true, false, true);
-    root = new Root("plugins.cfg", "ogre.cfg", "Ogre.log");
+    LogManager *lm = new LogManager();
+    lm->createLog("./Ogre.log0", true, false, true);
+    root = new Root("plugins.cfg", "ogre.cfg", "");
 
     ConfigFile cf;
     cf.load("resources.cfg");

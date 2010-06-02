@@ -233,7 +233,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
         false -> 
            send_to_clients(Clients,{frameDone,LocalPlayerID,Frame}),
            log("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
-            NewConsole = log_console(Console, "waiting for players ~w ~s", [Frame,?VERSION]),
+            NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
             log("waiting for players ~w ~s",[Frame,?VERSION]),
             [Fst|_] = NewPlayers,
            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
