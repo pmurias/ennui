@@ -94,7 +94,7 @@ create_player(ID, Mesh) ->
 
 play(ID, Clients) ->
     init_ogre(),
-    add_compositor('Bloom'),
+    %add_compositor('Bloom'),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
     create_textbox(Panel, 'ver', 10.0, 580.0, 500.0, 30.0, {1.0, 0.0, 0.0}, list_to_atom(?VERSION)),
