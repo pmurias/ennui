@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,add_compositor/1,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -46,6 +46,7 @@ set_overlay_element_parameter(_,_,_) -> throw('nif library not loaded').
 set_overlay_element_caption(_,_) -> throw('nif library not loaded').
 add_overlay_container_child(_,_) -> throw('nif library not loaded').
 set_overlay_element_fontname(_,_) -> throw('nif library not loaded').
+add_compositor(_) -> throw('nif library not loaded').
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node,entity}).
 
@@ -93,6 +94,7 @@ create_player(ID, Mesh) ->
 
 play(ID, Clients) ->
     init_ogre(),
+    add_compositor('Bloom'),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
     create_textbox(Panel, 'ver', 10.0, 580.0, 500.0, 30.0, {1.0, 0.0, 0.0}, list_to_atom(?VERSION)),
@@ -238,6 +240,6 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
             [Fst|_] = NewPlayers,
            lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, NewPlayers),
             play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
-        true -> halt()
+        true -> halt
     end.
 
