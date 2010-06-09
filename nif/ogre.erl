@@ -162,6 +162,9 @@ player_logic(Player) ->
     RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
     RunAnimState = get_animationstate(Player#player.entity, 'Run'),
     IdleAnimState = get_animationstate(Player#player.entity, 'Idle'),
+    Node = Player#player.node,
+    Pos = get_node_position(Node),
+    log("player ~p position: ~p", [Player#player.id, Pos]),
     case Player#player.leftDown of
         true -> rotate_node(Player#player.node,LeftRotation);
         false -> ok
