@@ -121,41 +121,40 @@ log(Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
     log_message(list_to_atom(Str)).
 
-handle_input(ID,{OldLeft,OldRight,OldUp,OldDown},Clients) ->
+handle_input({OldLeft,OldRight,OldUp,OldDown}) ->
     Left = key_down(?KC_LEFT),
     Right = key_down(?KC_RIGHT),
     Up = key_down(?KC_UP),
     Down = key_down(?KC_DOWN),
+    Input =
     case Left of
-        OldLeft -> ok;
-        _ -> send_to_clients(Clients, {ID,keyChange,?KC_LEFT,Left})
-    end,
+        OldLeft -> [];
+        _ -> [{keyChange,?KC_LEFT,Left}]
+    end ++
     case Right of
-        OldRight -> ok;
-        _ -> send_to_clients(Clients, {ID,keyChange,?KC_RIGHT,Right})
-    end,
+        OldRight -> [];
+        _ -> [{keyChange,?KC_RIGHT,Right}]
+    end ++
     case Up of
-        OldUp -> ok;
-        _ -> send_to_clients(Clients, {ID,keyChange,?KC_UP,Up})
-    end,
+        OldUp -> [];
+        _ -> [{keyChange,?KC_UP,Up}]
+    end ++ 
     case Down of
-        OldDown -> ok;
-        _ -> send_to_clients(Clients, {ID,keyChange,?KC_DOWN,Down})
+        OldDown -> [];
+        _ -> [{keyChange,?KC_DOWN,Down}]
     end,
-    {Left,Right,Up,Down}.
+    {{Left,Right,Up,Down},Input}.
 
 send_to_clients(Clients,Event) -> lists:foreach((fun(Client)->Client ! Event end), Clients).
 
-handle_player(Player) ->
-    ID = Player#player.id,
-    receive
-        {ID,keyChange,?KC_LEFT,State}  -> handle_player(Player#player{leftDown=State});
-        {ID,keyChange,?KC_RIGHT,State} -> handle_player(Player#player{rightDown=State});
-        {ID,keyChange,?KC_DOWN,State}  -> handle_player(Player#player{downDown=State});
-        {ID,keyChange,?KC_UP,State} -> handle_player(Player#player{upDown=State})
-    after
-        0 -> Player
-    end.
+handle_player(Player,Input) ->
+    lists:fold(fun
+        ({keyChange,?KC_LEFT,State},P)  -> P#player{leftDown=State};
+        ({keyChange,?KC_RIGHT,State},P) -> P#player{rightDown=State};
+        ({keyChange,?KC_DOWN,State},P)  -> P#player{downDown=State};
+        ({keyChange,?KC_UP,State},P) -> P#player{upDown=State} end,
+        Player,Input
+    ).
 
 player_logic(Player) ->
     Speed = 0.1,
@@ -202,33 +201,26 @@ find_localplayer(Players,LocalPlayerID) ->
     [LocalPlayer] = lists:filter((fun(Player) -> ID = Player#player.id, ID == LocalPlayerID end), Players),
     LocalPlayer.
 
-wait_for_player(Player,Frame) ->
-    ID = Player#player.id,
-    log("waiting for player ~p ~p ~p",[ID,Frame,?VERSION]),
-    receive 
-        {frameDone,ID,Frame} -> ok
-    after 2000 -> halt()
-    end.
 play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     capture_input(),
     render_frame(),
 
-    NewInputState = handle_input(LocalPlayerID,InputState,Clients),
-    case Clients of 
-        [_] -> ok;
-        _ -> send_to_clients(Clients,{frameDone,LocalPlayerID,Frame})
-    end,
-    case Clients of 
-        [_] -> ok;
-        _ -> lists:foreach(fun (Player) -> wait_for_player(Player,Frame) end, Players)
-    end,
-    NewPlayers = lists:map(fun handle_player/1,Players),
+    {NewInputState,Input} = handle_input(InputState),
 
+    Sending = {frameDone,LocalPlayerID,Frame,Input},
+    log("sending to clients ~w",[Sending]),
 
-    log("sending to clients ~w",[{frameDone,LocalPlayerID,Frame}]),
+    send_to_clients(Clients,Sending),
+    NewPlayers = lists:map(fun (Player) ->
+        ID = Player#player.id,
+        log("waiting for player ~p ~p ~p",[ID,Frame,?VERSION]),
+        receive 
+            {frameDone,ID,Frame,Input} -> handle_player(Player,Input)
+        after 2000 -> halt()
+        end
+    end,Players),
+
     NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
-    log("waiting for players ~w ~s",[Frame,?VERSION]),
-
 
     lists:foreach(fun player_logic/1,NewPlayers),
     LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
