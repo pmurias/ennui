@@ -148,7 +148,7 @@ handle_input({OldLeft,OldRight,OldUp,OldDown}) ->
 send_to_clients(Clients,Event) -> lists:foreach((fun(Client)->Client ! Event end), Clients).
 
 handle_player(Player,Input) ->
-    lists:fold(fun
+    lists:foldl(fun
         ({keyChange,?KC_LEFT,State},P)  -> P#player{leftDown=State};
         ({keyChange,?KC_RIGHT,State},P) -> P#player{rightDown=State};
         ({keyChange,?KC_DOWN,State},P)  -> P#player{downDown=State};
