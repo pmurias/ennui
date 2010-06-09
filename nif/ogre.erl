@@ -215,7 +215,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
         ID = Player#player.id,
         log("waiting for player ~p ~p ~p",[ID,Frame,?VERSION]),
         receive 
-            {frameDone,ID,Frame,Input2} -> handle_player(Player,Input2), log("player ~p recieved ~p", [Player, Input2])            
+            {frameDone,ID,Frame,Input2} -> log("player ~p recieved ~p", [Player, Input2]),handle_player(Player,Input2)          
         after 2000 -> halt()
         end
     end,Players),
