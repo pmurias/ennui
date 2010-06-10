@@ -119,7 +119,7 @@ play(ID, Clients) ->
 
 log(Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
-    log_message(list_to_atom(Str)).
+    log_message(Str).
 
 handle_input({OldLeft,OldRight,OldUp,OldDown}) ->
     Left = key_down(?KC_LEFT),
