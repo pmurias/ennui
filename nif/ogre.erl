@@ -200,10 +200,10 @@ vec_mult_quat({VX,VY,VZ}, {QW,QX,QY,QZ}) ->
     VZ + (2.0 * QW) * UVz + UUVz * 2.0}.
 
 quat_mult_quat({W1,X1,Y1,Z1}, {W2,X2,Y2,Z2}) ->
-    { W1 * X2 + X1 * W2 + Y1 * Z2 - Z1 * Y2,
+    { W1 * W2 - X1 * X2 - Y1 * Y2 - Z1 * Z2,
+      W1 * X2 + X1 * W2 + Y1 * Z2 - Z1 * Y2,
       W1 * Y2 + Y1 * W2 + Z1 * X2 - X1 * Z2,
-      W1 * Z2 + Z1 * W2 + X1 * Y2 - Y1 * X2,
-      W1 * W2 - X1 * X2 - Y1 * Y2 - Z1 * Z2}.
+      W1 * Z2 + Z1 * W2 + X1 * Y2 - Y1 * X2 }.
 
 move_node(Node,By) ->
    {X,Y,Z} = get_node_position(Node),
