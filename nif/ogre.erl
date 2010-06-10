@@ -107,7 +107,7 @@ play(ID, Clients, Players_) ->
     register(ID, self()),
     Players = lists:map(
         fun (p0) -> create_player(p0, 'Policeman.mesh');
-            (p1) -> create_player(p1, 'Policeman.mesh') end,Players_),
+            (p1) -> create_player(p1, 'Blackman.mesh') end,Players_),
     play_loop(1,ID, Players, {false,false,false,false}, [self()|Clients], Con),
     destroy_ogre().
 

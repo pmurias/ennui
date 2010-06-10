@@ -1,0 +1,143 @@
+<skeleton>
+	<bones>
+		<bone id="3" name="Bone_R">
+			<position x="0.000000" y="0.843205" z="0.000000"/>
+			<rotation angle="2.795774">
+				<axis x="0.823225" y="-0.297272" z="0.483662"/>
+			</rotation>
+		</bone>
+		<bone id="18" name="Bone">
+			<position x="0.000000" y="0.843205" z="0.000000"/>
+			<rotation angle="0.000000">
+				<axis x="-0.975517" y="0.219924" z="-0.000000"/>
+			</rotation>
+		</bone>
+		<bone id="19" name="Bone_L">
+			<position x="0.000000" y="0.843205" z="0.000000"/>
+			<rotation angle="2.491294">
+				<axis x="-0.337114" y="-0.121734" z="-0.933560"/>
+			</rotation>
+		</bone>
+		<bone id="10" name="Bone_R.001">
+			<position x="-0.000000" y="0.175255" z="-0.000000"/>
+			<rotation angle="1.300457">
+				<axis x="0.210133" y="-0.885652" z="-0.414083"/>
+			</rotation>
+		</bone>
+		<bone id="13" name="Bone.001">
+			<position x="0.000000" y="0.222993" z="-0.000000"/>
+			<rotation angle="3.098074">
+				<axis x="-0.000000" y="1.000000" z="0.000000"/>
+			</rotation>
+		</bone>
+		<bone id="17" name="Bone_L.001">
+			<position x="0.000000" y="0.175255" z="0.000000"/>
+			<rotation angle="0.800410">
+				<axis x="-0.286357" y="0.692411" z="-0.662243"/>
+			</rotation>
+		</bone>
+		<bone id="4" name="Bone_R.002">
+			<position x="-0.000000" y="0.241768" z="0.000000"/>
+			<rotation angle="0.020968">
+				<axis x="0.092071" y="-0.707092" z="0.701102"/>
+			</rotation>
+		</bone>
+		<bone id="16" name="Bone.001_R">
+			<position x="-0.000000" y="0.278783" z="-0.000000"/>
+			<rotation angle="2.290598">
+				<axis x="-0.666172" y="-0.498190" z="-0.554998"/>
+			</rotation>
+		</bone>
+		<bone id="0" name="Bone.001_L">
+			<position x="-0.000000" y="0.278783" z="-0.000000"/>
+			<rotation angle="2.109514">
+				<axis x="-0.507137" y="0.418984" z="0.753169"/>
+			</rotation>
+		</bone>
+		<bone id="14" name="Bone.002">
+			<position x="-0.000000" y="0.278783" z="-0.000000"/>
+			<rotation angle="0.059219">
+				<axis x="0.003482" y="0.971572" z="0.236721"/>
+			</rotation>
+		</bone>
+		<bone id="1" name="Bone_L.002">
+			<position x="0.000000" y="0.241768" z="0.000000"/>
+			<rotation angle="0.020968">
+				<axis x="0.092121" y="-0.707086" z="0.701101"/>
+			</rotation>
+		</bone>
+		<bone id="2" name="Bone_R.003">
+			<position x="0.000000" y="0.415268" z="0.000000"/>
+			<rotation angle="1.491031">
+				<axis x="-0.989665" y="0.143222" z="-0.007143"/>
+			</rotation>
+		</bone>
+		<bone id="15" name="Bone.001_R.001">
+			<position x="0.000000" y="0.365230" z="-0.000000"/>
+			<rotation angle="0.442777">
+				<axis x="0.914603" y="0.401976" z="-0.043778"/>
+			</rotation>
+		</bone>
+		<bone id="5" name="Bone.001_L.001">
+			<position x="-0.000000" y="0.365229" z="-0.000000"/>
+			<rotation angle="0.705459">
+				<axis x="0.581251" y="0.813179" z="-0.029788"/>
+			</rotation>
+		</bone>
+		<bone id="8" name="Bone_L.003">
+			<position x="-0.000000" y="0.415268" z="0.000000"/>
+			<rotation angle="1.472127">
+				<axis x="0.989448" y="0.007217" z="-0.144710"/>
+			</rotation>
+		</bone>
+		<bone id="12" name="Bone.001_R.002">
+			<position x="-0.000000" y="0.368197" z="0.000000"/>
+			<rotation angle="0.103139">
+				<axis x="0.008112" y="-0.999967" z="-0.000058"/>
+			</rotation>
+		</bone>
+		<bone id="6" name="Bone.001_L.002">
+			<position x="0.000000" y="0.368197" z="0.000000"/>
+			<rotation angle="0.205436">
+				<axis x="0.004040" y="-0.999992" z="0.000557"/>
+			</rotation>
+		</bone>
+		<bone id="11" name="Bone.001_R.003">
+			<position x="0.000000" y="0.349135" z="0.000000"/>
+			<rotation angle="0.569119">
+				<axis x="-0.786646" y="0.610563" z="-0.091654"/>
+			</rotation>
+		</bone>
+		<bone id="7" name="Bone.001_L.003">
+			<position x="-0.000000" y="0.349135" z="-0.000000"/>
+			<rotation angle="0.534232">
+				<axis x="-0.828618" y="0.538967" z="-0.151349"/>
+			</rotation>
+		</bone>
+		<bone id="9" name="Bone.001_R.004">
+			<position x="-0.000000" y="0.174224" z="-0.000000"/>
+			<rotation angle="1.667255">
+				<axis x="0.030067" y="-0.288812" z="0.956913"/>
+			</rotation>
+		</bone>
+	</bones>
+	<bonehierarchy>
+		<boneparent bone="Bone_R.001" parent="Bone_R" />
+		<boneparent bone="Bone.001" parent="Bone" />
+		<boneparent bone="Bone_L.001" parent="Bone_L" />
+		<boneparent bone="Bone_R.002" parent="Bone_R.001" />
+		<boneparent bone="Bone.001_R" parent="Bone.001" />
+		<boneparent bone="Bone.001_L" parent="Bone.001" />
+		<boneparent bone="Bone.002" parent="Bone.001" />
+		<boneparent bone="Bone_L.002" parent="Bone_L.001" />
+		<boneparent bone="Bone_R.003" parent="Bone_R.002" />
+		<boneparent bone="Bone.001_R.001" parent="Bone.001_R" />
+		<boneparent bone="Bone.001_L.001" parent="Bone.001_L" />
+		<boneparent bone="Bone_L.003" parent="Bone_L.002" />
+		<boneparent bone="Bone.001_R.002" parent="Bone.001_R.001" />
+		<boneparent bone="Bone.001_L.002" parent="Bone.001_L.001" />
+		<boneparent bone="Bone.001_R.003" parent="Bone.001_R.002" />
+		<boneparent bone="Bone.001_L.003" parent="Bone.001_L.002" />
+		<boneparent bone="Bone.001_R.004" parent="Bone.001_R.003" />
+	</bonehierarchy>
+</skeleton>
