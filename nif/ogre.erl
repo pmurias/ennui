@@ -189,10 +189,19 @@ player_logic(Player) ->
         false -> ok
     end.
 
+v_crossproduct({X1,Y1,Z1}, {X2,Y2,Z2}) ->
+    {Y1 * Z2 - Z1 * Y2, Z1 * X2 - X1 * Z2, X1 * Y2 - Y1 * X2}.
+
+v_mult_quaternion({VX,VY,VZ}, {QW,QX,QY,QZ}) ->
+    {UVx, UVy, UVz} = v_crossproduct({QX,QY,QZ}, {VX,VY,VZ}),
+    {UUVx, UUVy, UUVz} = v_crossproduct({QX,QY,QZ}, {UVx,UVy,UVz}),
+    {VX + (2.0 * QW) * UVx + UUVx * 2.0 ,VY + (2.0 * QW) * UVy + UUVy * 2.0,VZ + (2.0 * QW) * UVz + UUVz}.
+
 move_node(Node,By) ->
    {X,Y,Z} = get_node_position(Node),
-%Orientation = get_node_orientation(Node),
-%{ByX, ByY, ByZ} = mult_quaternion_vector(Orientation, By),
+    Orientation = get_node_orientation(Node),
+    %{ByX, ByY, ByZ} = mult_quaternion_vector(Orientation, By),
+    {ByX, ByY, ByZ} = v_mult_quaternion(By, Orientation),
     {ByX, ByY, ByZ} = By,
     set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
