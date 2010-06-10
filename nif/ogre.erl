@@ -75,7 +75,7 @@ create_textbox(Panel,Id, X,Y, W, H, Colour, InitialText) ->
 
 
 create_console(Panel, Size) ->
-    lists:map((fun(I) -> create_textbox(Panel, "Console"++[I], 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, '') end), lists:seq(0, Size)).
+    lists:map((fun(I) -> create_textbox(Panel, list_to_atom("Console"++[I]), 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, '') end), lists:seq(0, Size)).
 
 log_console([Tb|Console], Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
