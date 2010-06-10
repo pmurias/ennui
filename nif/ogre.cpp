@@ -399,7 +399,7 @@ static ERL_NIF_TERM set_overlay_element_colour(ErlNifEnv* env, int argc, const E
 static ERL_NIF_TERM set_overlay_element_caption(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     OverlayElement *elem = (OverlayElement*)unwrap_pointer(env,overlaycontainer_resource,argv[0]);
     char pval[4096];
-    enif_get_atom(env,argv[1],pval,4096);
+    enif_get_string(env,argv[1],pval,4096, ERL_NIF_LATIN1);
     elem->setCaption(pval);
     return enif_make_atom(env, "ok");
 }
@@ -414,7 +414,7 @@ static ERL_NIF_TERM add_overlay_container_child(ErlNifEnv* env, int argc, const 
 
 static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char message[4096];
-    enif_get_atom(env,argv[0],message,4096);
+    enif_get_string(env,argv[0],message,4096, ERL_NIF_LATIN1);
     LogManager::getSingleton().getDefaultLog()->logMessage(message);
     return enif_make_atom(env, "ok");
 }

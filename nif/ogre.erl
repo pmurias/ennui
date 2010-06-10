@@ -75,11 +75,11 @@ create_textbox(Panel,Id, X,Y, W, H, Colour, InitialText) ->
 
 
 create_console(Panel, Size) ->
-    lists:map((fun(I) -> create_textbox(Panel, list_to_atom("Console"++[I]), 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, '') end), lists:seq(0, Size)).
+    lists:map((fun(I) -> create_textbox(Panel, "Console"++[I], 10.0, 10.0 + (I * 11.0), 500.0, 30.0, {0.0, 0.0, 0.0}, '') end), lists:seq(0, Size)).
 
 log_console([Tb|Console], Format, Args) ->
     Str = lists:flatten(io_lib:format(Format, Args)),
-    set_overlay_element_caption(Tb, list_to_atom(Str)),
+    set_overlay_element_caption(Tb, Str),
     Console++[Tb].
     
 create_player(ID, Mesh) ->
@@ -97,7 +97,7 @@ play(ID, Clients) ->
     %add_compositor('Bloom'),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
-    create_textbox(Panel, 'ver', 10.0, 480.0, 500.0, 30.0, {1.0, 0.0, 0.0}, list_to_atom(?VERSION)),
+    create_textbox(Panel, 'ver', 10.0, 480.0, 500.0, 30.0, {1.0, 0.0, 0.0}, ?VERSION),
 
     set_ambient_light({0.7, 0.7, 0.7}),
     GrassNode = create_scenenode(),
