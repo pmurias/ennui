@@ -193,7 +193,7 @@ move_node(Node,By) ->
    {X,Y,Z} = get_node_position(Node),
 %Orientation = get_node_orientation(Node),
 %{ByX, ByY, ByZ} = mult_quaternion_vector(Orientation, By),
-    {ByX, ByY, ByZ} = {0.0, 0.0, By},
+    {ByX, ByY, ByZ} = By,
     set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
 rotate_node(Node, By) ->
