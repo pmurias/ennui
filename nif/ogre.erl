@@ -1,5 +1,5 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,mult_quaternion_quaternion/2,mult_quaternion_vector/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,add_compositor/1,play/2]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,add_compositor/1,play/2]).
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -23,8 +23,6 @@ set_camera_orientation(_) -> throw('nif library not loaded').
 get_camera_position() -> throw('nif library not loaded').
 get_camera_orientation() -> throw('nif library not loaded').
 get_rotation_to(_,_) -> throw('nif library not loaded').
-mult_quaternion_quaternion(_,_) -> throw('nif library not loaded').
-mult_quaternion_vector(_,_) -> throw('nif library not loaded').
 get_quaternion_inverse(_) -> throw('nif library not loaded').
 get_animationstate(_,_) -> throw('nif library not loaded').
 set_animationstate_enabled(_,_) -> throw('nif library not loaded').
@@ -189,29 +187,33 @@ player_logic(Player) ->
         false -> ok
     end.
 
-v_crossproduct({X1,Y1,Z1}, {X2,Y2,Z2}) ->
+vec_cross_product({X1,Y1,Z1}, {X2,Y2,Z2}) ->
     {Y1 * Z2 - Z1 * Y2, 
     Z1 * X2 - X1 * Z2, 
     X1 * Y2 - Y1 * X2}.
 
-v_mult_quaternion({VX,VY,VZ}, {QW,QX,QY,QZ}) ->
-    {UVx, UVy, UVz} = v_crossproduct({QX,QY,QZ}, {VX,VY,VZ}),
-    {UUVx, UUVy, UUVz} = v_crossproduct({QX,QY,QZ}, {UVx,UVy,UVz}),
+vec_mult_quat({VX,VY,VZ}, {QW,QX,QY,QZ}) ->
+    {UVx, UVy, UVz} = vec_cross_product({QX,QY,QZ}, {VX,VY,VZ}),
+    {UUVx, UUVy, UUVz} = vec_cross_product({QX,QY,QZ}, {UVx,UVy,UVz}),
     {VX + (2.0 * QW) * UVx + UUVx * 2.0 ,
     VY + (2.0 * QW) * UVy + UUVy * 2.0,
     VZ + (2.0 * QW) * UVz + UUVz * 2.0}.
 
+quat_mult_quat({W1,X1,Y1,Z1}, {W2,X2,Y2,Z2}) ->
+    { W1 * X2 + X1 * W2 + Y1 * Z2 - Z1 * Y2,
+      W1 * Y2 + Y1 * W2 + Z1 * X2 - X1 * Z2,
+      W1 * Z2 + Z1 * W2 + X1 * Y2 - Y1 * X2,
+      W1 * W2 - X1 * X2 - Y1 * Y2 - Z1 * Z2}.
+
 move_node(Node,By) ->
    {X,Y,Z} = get_node_position(Node),
     Orientation = get_node_orientation(Node),
-    %{ByX, ByY, ByZ} = mult_quaternion_vector(Orientation, By),
-    {ByX, ByY, ByZ} = v_mult_quaternion(By, Orientation),
-    %{ByX, ByY, ByZ} = By,
+    {ByX, ByY, ByZ} = vec_mult_quat(By, Orientation),
     set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
 rotate_node(Node, By) ->
     CurrentOrientation = get_node_orientation(Node), 
-    NewOrientation = mult_quaternion_quaternion(CurrentOrientation, By),
+    NewOrientation = quat_mult_quat(CurrentOrientation, By),
     set_node_orientation(Node, NewOrientation).
 
 find_localplayer(Players,LocalPlayerID) ->
@@ -248,9 +250,9 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     NodeOrientation = get_node_orientation(LPNode),
     CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
     Camera180Rotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}),
-    CameraOrientation = mult_quaternion_quaternion(mult_quaternion_quaternion(NodeOrientation, Camera180Rotation), CameraDownRotation),
+    CameraOrientation = quat_mult_quat(quat_mult_quat(NodeOrientation, Camera180Rotation), CameraDownRotation),
     set_camera_orientation(CameraOrientation),
-    {CamMovementX, CamMovementY, CamMovementZ} = mult_quaternion_vector(NodeOrientation, {0.0, 0.0, -6.0}),
+    {CamMovementX, CamMovementY, CamMovementZ} = vec_mult_quat({0.0, 0.0, -6.0}, NodeOrientation),
     set_camera_position({X+CamMovementX,Y+CamMovementY+3.2,Z+CamMovementZ}),
 
 %    NewConsole = log_console(Console, "FPS: ~p (~p,~p,~p)", [get_average_fps(),X,Y,Z]),
