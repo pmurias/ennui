@@ -1,2 +1,2 @@
-ogre:play(p0, []).
+ogre:play(p0, [],[p0]).
 
