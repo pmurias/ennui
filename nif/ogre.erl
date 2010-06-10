@@ -179,11 +179,7 @@ player_logic(Player) ->
             set_animationstate_enabled(RunAnimState, 0),
             add_animationstate_time(IdleAnimState, 0.00666),
             ok
-    end,
-    case Player#player.downDown of
-        true -> move_node(Player#player.node,{0,0.0,-Speed});
-        false -> ok
-    end,
+    end,    
     case Player#player.rightDown of
         true -> rotate_node(Player#player.node,RightRotation);
         false -> ok
