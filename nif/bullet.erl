@@ -21,7 +21,8 @@ new_btDbvtBroadphase/0
 ,btRigidBody_getOrientation/1
 ,btRigidBody_translate/2
 ,btRigidBody_setWorldTransform/2
-,btRigidBody_setAngularFactor/1
+,btRigidBody_setAngularFactor/2
+,btRigidBody_setActivationState/2
 
 ]).
 -on_load(load_c_module/0).
@@ -48,4 +49,5 @@ btRigidBody_getCenterOfMassPosition(_) -> throw('nif library not loaded').
 btRigidBody_getOrientation(_) -> throw('nif library not loaded').
 btRigidBody_translate(_,_) -> throw('nif library not loaded').
 btRigidBody_setWorldTransform(_,_) -> throw('nif library not loaded').
-btRigidBody_setAngularFactor(_) -> throw('nif library not loaded').
+btRigidBody_setAngularFactor(_,_) -> throw('nif library not loaded').
+btRigidBody_setActivationState(_,_) -> throw('nif library not loaded').
