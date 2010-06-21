@@ -236,6 +236,14 @@ static ERL_NIF_TERM btRigidBody_setAngularFactor(ErlNifEnv* env, int argc, const
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM btRigidBody_setActivationState(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    int state;
+    enif_get_int(env, argv[1], &state);
+    ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->setAngularFactor(state);
+    return enif_make_atom(env, "ok");
+}
+
+
 static ErlNifFunc nif_funcs[] =
 {
 

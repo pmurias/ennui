@@ -25,4 +25,5 @@ btRigidBody_getOrientation 1
 btRigidBody_translate 2
 
 btRigidBody_setWorldTransform 2
-btRigidBody_setAngularFactor 1
+btRigidBody_setAngularFactor 2
+btRigidBody_setActivationState 2
