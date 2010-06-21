@@ -41,6 +41,18 @@ static void* unwrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,ERL_NIF_TERM
     return *((void**)ptr);
 }
 
+
+static btVector3 get_vector(ErlNifEnv *env, const ERL_NIF_TERM arg) {
+    double x,y,z;
+    const ERL_NIF_TERM *tuple;
+    int arity;
+    enif_get_tuple(env, arg, &arity, &tuple);
+    enif_get_double(env, tuple[0], &x);
+    enif_get_double(env, tuple[1], &y);
+    enif_get_double(env, tuple[2], &z);
+    return btVector3(x,y,z);
+}
+
 static ERL_NIF_TERM new_btDbvtBroadphase(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 
     return wrap_pointer(env,btBroadphaseInterface_resource,new btDbvtBroadphase());
@@ -98,6 +110,14 @@ static ERL_NIF_TERM new_btDiscreteDynamicsWorld(ErlNifEnv* env, int argc, const 
 }
 
 
+static ERL_NIF_TERM btDynamicsWorld_setGravity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    ((btDynamicsWorld*)unwrap_pointer(
+        env,
+        btDynamicsWorld_resource,
+        argv[0]
+    ))->setGravity(get_vector(env,argv[1]));
+    return enif_make_atom(env, "ok");
+}
 
 
 static ErlNifFunc nif_funcs[] =
@@ -107,6 +127,7 @@ static ErlNifFunc nif_funcs[] =
     {"new_btCollisionDispatcher", 0, new_btCollisionDispatcher},
     {"new_btSequentialImpulseConstraintSolver", 0, new_btSequentialImpulseConstraintSolver},
     {"new_btDiscreteDynamicsWorld", 4, new_btDiscreteDynamicsWorld},
+    {"btDynamicsWorld_setGravity", 2,btDynamicsWorld_setGravity },
 
 };
 
