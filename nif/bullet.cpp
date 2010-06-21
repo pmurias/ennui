@@ -12,6 +12,7 @@ static ErlNifResourceType* btDefaultCollisionConfiguration_resource;
 static ErlNifResourceType* btCollisionDispatcher_resource;
 static ErlNifResourceType* btSequentialImpulseConstraintSolver_resource;
 static ErlNifResourceType* btDynamicsWorld_resource;
+static ErlNifResourceType* btCollisionShape_resource;
 
 
 
@@ -98,6 +99,18 @@ static ERL_NIF_TERM new_btDiscreteDynamicsWorld(ErlNifEnv* env, int argc, const 
 }
 
 
+static ERL_NIF_TERM new_btBoxShape(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    return wrap_pointer(env,btCollisionShape_resource,(void*)new btBoxShape(get_vector(env,argv[0])));
+}
+static ERL_NIF_TERM new_btSphereShape(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    double radius;
+    enif_get_double(env, argv[0], &radius);
+    return wrap_pointer(env,btCollisionShape_resource,(void*)new btSphereShape(radius));
+}
+static ERL_NIF_TERM new_btCylinderShape(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    return wrap_pointer(env,btCollisionShape_resource,new btCylinderShape(get_vector(env,argv[0])));
+}
+
 static ERL_NIF_TERM btDynamicsWorld_setGravity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     ((btDynamicsWorld*)unwrap_pointer(
         env,
@@ -116,6 +129,11 @@ static ErlNifFunc nif_funcs[] =
     {"new_btSequentialImpulseConstraintSolver", 0, new_btSequentialImpulseConstraintSolver},
     {"new_btDiscreteDynamicsWorld", 4, new_btDiscreteDynamicsWorld},
     {"btDynamicsWorld_setGravity", 2,btDynamicsWorld_setGravity },
+    {"new_btDiscreteDynamicsWorld", 4, new_btDiscreteDynamicsWorld},
+
+    {"new_btBoxShape", 1, new_btBoxShape},
+    {"new_btSphereShape", 1, new_btSphereShape},
+    {"new_btCylinderShape", 1, new_btCylinderShape}
 
 };
 
@@ -137,6 +155,9 @@ static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
         env,"btDynamicsWorld",NULL,ERL_NIF_RT_CREATE,NULL
     );
 
+    btCollisionShape_resource = enif_open_resource_type(
+        env,"btCollisionShape",NULL,ERL_NIF_RT_CREATE,NULL
+    );
 
     return 0;
 }
