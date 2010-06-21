@@ -23,3 +23,5 @@ btRigidBody_getCenterOfMassPosition 1
 btRigidBody_getOrientation
 
 btRigidBody_translate
+
+btRigidBody_setWorldTransform

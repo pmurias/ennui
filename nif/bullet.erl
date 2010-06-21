@@ -18,7 +18,10 @@ new_btDbvtBroadphase/0
 ,btDynamicsWorld_addRigidBody/2
 ,btDynamicsWorld_removeRigidBody/2
 ,btRigidBody_getCenterOfMassPosition/1
-
+,btRigidBody_getOrientation
+/,btRigidBody_translate
+/,btRigidBody_setWorldTransform
+/
 ]).
 -on_load(load_c_module/0).
 load_c_module() ->
@@ -41,3 +44,9 @@ btRigidBody_setFriction(_,_) -> throw('nif library not loaded').
 btDynamicsWorld_addRigidBody(_,_) -> throw('nif library not loaded').
 btDynamicsWorld_removeRigidBody(_,_) -> throw('nif library not loaded').
 btRigidBody_getCenterOfMassPosition(_) -> throw('nif library not loaded').
+btRigidBody_getOrientation
+() -> throw('nif library not loaded').
+btRigidBody_translate
+() -> throw('nif library not loaded').
+btRigidBody_setWorldTransform
+() -> throw('nif library not loaded').
