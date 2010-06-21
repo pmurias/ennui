@@ -7,4 +7,4 @@ ogre.so:  ogre.cpp
 bullet.erl: list
 	perl process list > bullet.erl
 bullet.so:  bullet.cpp
-	gcc -fPIC -shared -I /usr/lib/erlang/erts-5.7.5/include/ -I bullet/src -shared bullet.cpp  -o bullet.so -L bullet/src/BulletCollision -L bullet/src/BulletSoftBody -L bullet/src/BulletDynamics -lBulletCollision -lBulletSoftBody -LBulletDynamics
+	gcc -fPIC -shared -I /usr/lib/erlang/erts-5.7.5/include/ -I bullet/src -I bullet/src/BulletDynamics/Dynamics -shared bullet.cpp  -o bullet.so -L bullet/src/BulletCollision -L bullet/src/BulletSoftBody -L bullet/src/BulletDynamics -lBulletCollision -lBulletSoftBody -LBulletDynamics -I bullet/src/BulletCollision/CollisionShapes

@@ -5,6 +5,8 @@ extern "C" {
 }
 
 #include <btBulletDynamicsCommon.h>
+#include <btRigidBody.h>
+#include <btCollisionShape.h>
 
 
 static ErlNifResourceType* btBroadphaseInterface_resource;
@@ -14,6 +16,7 @@ static ErlNifResourceType* btSequentialImpulseConstraintSolver_resource;
 static ErlNifResourceType* btDynamicsWorld_resource;
 static ErlNifResourceType* btCollisionShape_resource;
 static ErlNifResourceType* btMotionState_resource;
+static ErlNifResourceType* btRigidBodyConstructionInfo_resource;
 
 
 
@@ -143,24 +146,35 @@ static ERL_NIF_TERM new_btDefaultMotionState(ErlNifEnv* env, int argc, const ERL
     return wrap_pointer(env,btMotionState_resource,new btDefaultMotionState(get_transform(env,argv[0])));
 }
 
+static ERL_NIF_TERM vector_to_tuple(ErlNifEnv* env, btVector3 v) {
+    return enif_make_tuple3(env, enif_make_double(env, v.getX()), enif_make_double(env, v.getY()), enif_make_double(env,v.getZ()));
+}
+
+static ERL_NIF_TERM btCollisionShape_calculateLocalInertia(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    btVector3 ret;
+    double mass;
+    enif_get_double(env, argv[1], &mass);
+    ((btCollisionShape*)unwrap_pointer(env,btCollisionShape_resource,argv[0]))->calculateLocalInertia((btScalar)mass,ret);
+    return vector_to_tuple(env,ret);
+}
+
+static ERL_NIF_TERM new_btRigidBodyConstructionInfo(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    double mass;
+    enif_get_double(env, argv[0], &mass);
+    return wrap_pointer(env,btRigidBodyConstructionInfo_resource, new btRigidBody::btRigidBodyConstructionInfo(
+        mass,
+        (btMotionState*)unwrap_pointer(env,btMotionState_resource,argv[1]),
+        (btCollisionShape*)unwrap_pointer(env,btCollisionShape_resource,argv[2]),
+        get_vector(env,argv[3])
+        ));
+}
 
 
 static ErlNifFunc nif_funcs[] =
 {
-    {"new_btDbvtBroadphase", 0, new_btDbvtBroadphase},
-    {"new_btDefaultCollisionConfiguration", 0, new_btDefaultCollisionConfiguration},
-    {"new_btCollisionDispatcher", 0, new_btCollisionDispatcher},
-    {"new_btSequentialImpulseConstraintSolver", 0, new_btSequentialImpulseConstraintSolver},
-    {"new_btDiscreteDynamicsWorld", 4, new_btDiscreteDynamicsWorld},
-    {"btDynamicsWorld_setGravity", 2,btDynamicsWorld_setGravity },
-    {"new_btDiscreteDynamicsWorld", 4, new_btDiscreteDynamicsWorld},
-
-    {"new_btBoxShape", 1, new_btBoxShape},
-    {"new_btSphereShape", 1, new_btSphereShape},
-    {"new_btCylinderShape", 1, new_btCylinderShape},
-    {"new_btDefaultMotionState", 2, new_btDefaultMotionState}
 
 };
+
 
 static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     btBroadphaseInterface_resource = enif_open_resource_type(
@@ -187,6 +201,10 @@ static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     btMotionState_resource = enif_open_resource_type(
         env,"btMotionState",NULL,ERL_NIF_RT_CREATE,NULL
     );
+    btRigidBodyConstructionInfo_resource = enif_open_resource_type(
+        env,"btRigidBodyConstructionInfo",NULL,ERL_NIF_RT_CREATE,NULL
+    );
+
 
     return 0;
 }

@@ -10,6 +10,7 @@ new_btDbvtBroadphase/0
 ,new_btSphereShape/1
 ,new_btCylinderShape/1
 ,new_btDefaultMotionState/1
+,btCollisionShape_calculateLocalInertia/2
 
 ]).
 -on_load(load_c_module/0).
@@ -25,3 +26,4 @@ new_btBoxShape(_) -> throw('nif library not loaded').
 new_btSphereShape(_) -> throw('nif library not loaded').
 new_btCylinderShape(_) -> throw('nif library not loaded').
 new_btDefaultMotionState(_) -> throw('nif library not loaded').
+btCollisionShape_calculateLocalInertia(_,_) -> throw('nif library not loaded').
