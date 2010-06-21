@@ -17,6 +17,7 @@ static ErlNifResourceType* btDynamicsWorld_resource;
 static ErlNifResourceType* btCollisionShape_resource;
 static ErlNifResourceType* btMotionState_resource;
 static ErlNifResourceType* btRigidBodyConstructionInfo_resource;
+static ErlNifResourceType* btRigidBody_resource;
 
 
 
@@ -169,6 +170,17 @@ static ERL_NIF_TERM new_btRigidBodyConstructionInfo(ErlNifEnv* env, int argc, co
         ));
 }
 
+static ERL_NIF_TERM new_btRigidBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    double mass;
+    enif_get_double(env, argv[0], &mass);
+    return wrap_pointer(env,btRigidBodyConstructionInfo_resource, new btRigidBody::btRigidBodyConstructionInfo(
+        mass,
+        (btMotionState*)unwrap_pointer(env,btMotionState_resource,argv[1]),
+        (btCollisionShape*)unwrap_pointer(env,btCollisionShape_resource,argv[2]),
+        get_vector(env,argv[3])
+        ));
+}
+
 
 static ErlNifFunc nif_funcs[] =
 {
@@ -203,6 +215,9 @@ static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     );
     btRigidBodyConstructionInfo_resource = enif_open_resource_type(
         env,"btRigidBodyConstructionInfo",NULL,ERL_NIF_RT_CREATE,NULL
+    );
+    btRigidBody_resource = enif_open_resource_type(
+        env,"btRigidBody",NULL,ERL_NIF_RT_CREATE,NULL
     );
 
 
