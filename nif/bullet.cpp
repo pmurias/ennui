@@ -219,6 +219,11 @@ static ERL_NIF_TERM btRigidBody_getOrientation(ErlNifEnv* env, int argc, const E
     return quaternion_to_tuple(env,((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->getOrientation());
 }
 
+static ERL_NIF_TERM btRigidBody_translate(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->translate(get_vector(env,argv[1]));
+    return enif_make_atom(env, "ok");
+}
+
 static ErlNifFunc nif_funcs[] =
 {
 
