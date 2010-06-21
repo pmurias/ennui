@@ -151,6 +151,10 @@ static ERL_NIF_TERM vector_to_tuple(ErlNifEnv* env, btVector3 v) {
     return enif_make_tuple3(env, enif_make_double(env, v.getX()), enif_make_double(env, v.getY()), enif_make_double(env,v.getZ()));
 }
 
+static ERL_NIF_TERM quaternion_to_tuple(ErlNifEnv* env, btQuaternion v) {
+    return enif_make_tuple4(env, enif_make_double(env, v.getX()), enif_make_double(env, v.getY()), enif_make_double(env,v.getZ()), enif_make_double(env,v.getW()));
+}
+
 static ERL_NIF_TERM btCollisionShape_calculateLocalInertia(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     btVector3 ret;
     double mass;
@@ -196,6 +200,7 @@ static ERL_NIF_TERM btRigidBody_setFriction(ErlNifEnv* env, int argc, const ERL_
     return enif_make_atom(env, "ok");
 }
 
+
 static ERL_NIF_TERM btDynamicsWorld_addRigidBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     ((btDynamicsWorld*)unwrap_pointer(env,btDynamicsWorld_resource,argv[0]))->addRigidBody((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[1]));
     return enif_make_atom(env, "ok");
@@ -206,6 +211,13 @@ static ERL_NIF_TERM btDynamicsWorld_removeRigidBody(ErlNifEnv* env, int argc, co
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM btRigidBody_getCenterOfMassPosition(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    return vector_to_tuple(env,((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->getCenterOfMassPosition());
+}
+
+static ERL_NIF_TERM btRigidBody_getOrientation(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    return quaternion_to_tuple(env,((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->getOrientation());
+}
 
 static ErlNifFunc nif_funcs[] =
 {

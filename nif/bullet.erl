@@ -12,10 +12,13 @@ new_btDbvtBroadphase/0
 ,new_btDefaultMotionState/1
 ,btCollisionShape_calculateLocalInertia/2
 ,new_btRigidBodyConstructionInfo/4
-,new_btRigidBodyConstruction/1
-,btDynamicsWorld_addRigidBody
-/,btDynamicsWorld_removeRigidBody
-/
+,new_btRigidBody/1
+,btRigidBody_setDamping/3
+,btRigidBody_setFriction/2
+,btDynamicsWorld_addRigidBody/2
+,btDynamicsWorld_removeRigidBody/2
+,btRigidBody_getCenterOfMassPosition/1
+
 ]).
 -on_load(load_c_module/0).
 load_c_module() ->
@@ -32,8 +35,9 @@ new_btCylinderShape(_) -> throw('nif library not loaded').
 new_btDefaultMotionState(_) -> throw('nif library not loaded').
 btCollisionShape_calculateLocalInertia(_,_) -> throw('nif library not loaded').
 new_btRigidBodyConstructionInfo(_,_,_,_) -> throw('nif library not loaded').
-new_btRigidBodyConstruction(_) -> throw('nif library not loaded').
-btDynamicsWorld_addRigidBody
-() -> throw('nif library not loaded').
-btDynamicsWorld_removeRigidBody
-() -> throw('nif library not loaded').
+new_btRigidBody(_) -> throw('nif library not loaded').
+btRigidBody_setDamping(_,_,_) -> throw('nif library not loaded').
+btRigidBody_setFriction(_,_) -> throw('nif library not loaded').
+btDynamicsWorld_addRigidBody(_,_) -> throw('nif library not loaded').
+btDynamicsWorld_removeRigidBody(_,_) -> throw('nif library not loaded').
+btRigidBody_getCenterOfMassPosition(_) -> throw('nif library not loaded').

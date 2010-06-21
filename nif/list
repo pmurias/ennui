@@ -1,0 +1,22 @@
+new_btDbvtBroadphase 0
+new_btDefaultCollisionConfiguration 0
+new_btCollisionDispatcher 0
+new_btSequentialImpulseConstraintSolver 0
+new_btDiscreteDynamicsWorld 4
+btDynamicsWorld_setGravity 2
+
+new_btBoxShape 1
+new_btSphereShape 1
+new_btCylinderShape 1
+new_btDefaultMotionState 1
+btCollisionShape_calculateLocalInertia 2
+new_btRigidBodyConstructionInfo 4
+new_btRigidBody 1
+
+btRigidBody_setDamping 3
+btRigidBody_setFriction 2
+
+btDynamicsWorld_addRigidBody 2
+btDynamicsWorld_removeRigidBody 2
+
+btRigidBody_getCenterOfMassPosition 1
