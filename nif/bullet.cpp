@@ -8,7 +8,6 @@ extern "C" {
 #include <btRigidBody.h>
 #include <btCollisionShape.h>
 
-
 static ErlNifResourceType* btBroadphaseInterface_resource;
 static ErlNifResourceType* btDefaultCollisionConfiguration_resource;
 static ErlNifResourceType* btCollisionDispatcher_resource;
@@ -18,8 +17,6 @@ static ErlNifResourceType* btCollisionShape_resource;
 static ErlNifResourceType* btMotionState_resource;
 static ErlNifResourceType* btRigidBodyConstructionInfo_resource;
 static ErlNifResourceType* btRigidBody_resource;
-
-
 
 
 static ERL_NIF_TERM wrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,void* ptr) {
@@ -131,6 +128,17 @@ static ERL_NIF_TERM btDynamicsWorld_setGravity(ErlNifEnv* env, int argc, const E
     return enif_make_atom(env, "ok");
 }
 
+
+static ERL_NIF_TERM btDynamicsWorld_stepSimulation(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    ((btDynamicsWorld*)unwrap_pointer(
+        env,
+        btDynamicsWorld_resource,
+        argv[0]
+    ))->stepSimulation(0.166667f);
+    return enif_make_atom(env, "ok");
+}
+
+
 static ERL_NIF_TERM new_btBoxShape(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     return wrap_pointer(env,btCollisionShape_resource,(void*)new btBoxShape(get_vector(env,argv[0])));
 }
@@ -165,24 +173,20 @@ static ERL_NIF_TERM btCollisionShape_calculateLocalInertia(ErlNifEnv* env, int a
 
 static ERL_NIF_TERM new_btRigidBodyConstructionInfo(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     double mass;
+    btVector3 inertia = get_vector(env,argv[3]);
     enif_get_double(env, argv[0], &mass);
     return wrap_pointer(env,btRigidBodyConstructionInfo_resource, new btRigidBody::btRigidBodyConstructionInfo(
         mass,
         (btMotionState*)unwrap_pointer(env,btMotionState_resource,argv[1]),
         (btCollisionShape*)unwrap_pointer(env,btCollisionShape_resource,argv[2]),
-        get_vector(env,argv[3])
+        inertia
         ));
 }
 
 static ERL_NIF_TERM new_btRigidBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    double mass;
-    enif_get_double(env, argv[0], &mass);
-    return wrap_pointer(env,btRigidBodyConstructionInfo_resource, new btRigidBody::btRigidBodyConstructionInfo(
-        mass,
-        (btMotionState*)unwrap_pointer(env,btMotionState_resource,argv[1]),
-        (btCollisionShape*)unwrap_pointer(env,btCollisionShape_resource,argv[2]),
-        get_vector(env,argv[3])
-        ));
+    btRigidBody::btRigidBodyConstructionInfo *rbCI = (btRigidBody::btRigidBodyConstructionInfo*)unwrap_pointer(env,btRigidBodyConstructionInfo_resource,argv[0]);
+    btRigidBody *bady = new btRigidBody(*rbCI);
+    return wrap_pointer(env,btRigidBody_resource, new btRigidBody(*rbCI));
 }
 
 static ERL_NIF_TERM btRigidBody_setDamping(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
@@ -239,14 +243,14 @@ static ERL_NIF_TERM btRigidBody_setAngularFactor(ErlNifEnv* env, int argc, const
 static ERL_NIF_TERM btRigidBody_setActivationState(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     int state;
     enif_get_int(env, argv[1], &state);
-    ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->setAngularFactor(state);
+    ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->setActivationState(state);
     return enif_make_atom(env, "ok");
 }
 
 
 static ErlNifFunc nif_funcs[] =
 {
-{"new_btDbvtBroadphase",0,new_btDbvtBroadphase},{"new_btDefaultCollisionConfiguration",0,new_btDefaultCollisionConfiguration},{"new_btCollisionDispatcher",0,new_btCollisionDispatcher},{"new_btSequentialImpulseConstraintSolver",0,new_btSequentialImpulseConstraintSolver},{"new_btDiscreteDynamicsWorld",4,new_btDiscreteDynamicsWorld},{"btDynamicsWorld_setGravity",2,btDynamicsWorld_setGravity},{"new_btBoxShape",1,new_btBoxShape},{"new_btSphereShape",1,new_btSphereShape},{"new_btCylinderShape",1,new_btCylinderShape},{"new_btDefaultMotionState",1,new_btDefaultMotionState},{"btCollisionShape_calculateLocalInertia",2,btCollisionShape_calculateLocalInertia},{"new_btRigidBodyConstructionInfo",4,new_btRigidBodyConstructionInfo},{"new_btRigidBody",1,new_btRigidBody},{"btRigidBody_setDamping",3,btRigidBody_setDamping},{"btRigidBody_setFriction",2,btRigidBody_setFriction},{"btDynamicsWorld_addRigidBody",2,btDynamicsWorld_addRigidBody},{"btDynamicsWorld_removeRigidBody",2,btDynamicsWorld_removeRigidBody},{"btRigidBody_getCenterOfMassPosition",1,btRigidBody_getCenterOfMassPosition},{"btRigidBody_getOrientation",1,btRigidBody_getOrientation},{"btRigidBody_translate",2,btRigidBody_translate},{"btRigidBody_setWorldTransform",2,btRigidBody_setWorldTransform},{"btRigidBody_setAngularFactor",2,btRigidBody_setAngularFactor},{"btRigidBody_setActivationState",2,btRigidBody_setActivationState}
+{"new_btDbvtBroadphase",0,new_btDbvtBroadphase},{"new_btDefaultCollisionConfiguration",0,new_btDefaultCollisionConfiguration},{"new_btCollisionDispatcher",0,new_btCollisionDispatcher},{"new_btSequentialImpulseConstraintSolver",0,new_btSequentialImpulseConstraintSolver},{"new_btDiscreteDynamicsWorld",4,new_btDiscreteDynamicsWorld},{"btDynamicsWorld_setGravity",2,btDynamicsWorld_setGravity},{"new_btBoxShape",1,new_btBoxShape},{"new_btSphereShape",1,new_btSphereShape},{"new_btCylinderShape",1,new_btCylinderShape},{"new_btDefaultMotionState",1,new_btDefaultMotionState},{"btCollisionShape_calculateLocalInertia",2,btCollisionShape_calculateLocalInertia},{"new_btRigidBodyConstructionInfo",4,new_btRigidBodyConstructionInfo},{"new_btRigidBody",1,new_btRigidBody},{"btRigidBody_setDamping",3,btRigidBody_setDamping},{"btRigidBody_setFriction",2,btRigidBody_setFriction},{"btDynamicsWorld_addRigidBody",2,btDynamicsWorld_addRigidBody},{"btDynamicsWorld_removeRigidBody",2,btDynamicsWorld_removeRigidBody},{"btRigidBody_getCenterOfMassPosition",1,btRigidBody_getCenterOfMassPosition},{"btRigidBody_getOrientation",1,btRigidBody_getOrientation},{"btRigidBody_translate",2,btRigidBody_translate},{"btRigidBody_setWorldTransform",2,btRigidBody_setWorldTransform},{"btRigidBody_setAngularFactor",2,btRigidBody_setAngularFactor},{"btRigidBody_setActivationState",2,btRigidBody_setActivationState},{"btDynamicsWorld_stepSimulation",1,btDynamicsWorld_stepSimulation}
 };
 
 

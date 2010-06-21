@@ -6,6 +6,7 @@ extern "C" {
 #include <OGRE/Ogre.h>
 #include <OIS/OIS.h>
 #include <OGRE/OgreTextAreaOverlayElement.h>
+#include <btBulletDynamicsCommon.h>
 
 using namespace Ogre;
 
@@ -26,9 +27,150 @@ static ErlNifResourceType* animationstate_resource;
 static ErlNifResourceType* overlay_resource;
 static ErlNifResourceType* overlaycontainer_resource;
 
+static ErlNifResourceType* btRigidBody_resource;
+
+static ERL_NIF_TERM wrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,void* ptr) {
+    void** resource = (void**) enif_alloc_resource(env,type,sizeof(void*));
+    *resource = ptr;
+    ERL_NIF_TERM term = enif_make_resource(env,resource);
+    enif_release_resource(env,(void*)resource);
+    return term;
+}
+
 static ERL_NIF_TERM hello(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     return enif_make_string(env, "Hello world!", ERL_NIF_LATIN1);
+}
+
+static void GetMeshInformation(
+            const Ogre::MeshPtr mesh,
+            size_t &vertexCount,
+            Ogre::Vector3* &vertices,
+            size_t &indexCount,
+            unsigned* &indices)
+{
+    bool addShared = false;
+    size_t currentOffset = 0;
+    size_t shared_offset = 0;
+    size_t nextOffset = 0;
+    size_t indexOffset = 0;
+
+    vertexCount = indexCount = 0;
+
+    for ( unsigned short i = 0; i < mesh->getNumSubMeshes(); ++i) {
+        Ogre::SubMesh* submesh = mesh->getSubMesh(i);
+        if(submesh->useSharedVertices) {
+            if( !addShared ) {
+                vertexCount += mesh->sharedVertexData->vertexCount;
+                addShared = true;
+            }
+        }
+        else {
+            vertexCount += submesh->vertexData->vertexCount;
+        }
+        indexCount += submesh->indexData->indexCount;
+    }
+
+    vertices = new Ogre::Vector3[vertexCount];
+    indices = new unsigned[indexCount];
+
+    addShared = false;
+
+    for (unsigned short i = 0; i < mesh->getNumSubMeshes(); ++i) {
+        Ogre::SubMesh* submesh = mesh->getSubMesh(i);
+
+        Ogre::VertexData* vertexData = submesh->useSharedVertices ? mesh->sharedVertexData : submesh->vertexData;
+
+        if ((!submesh->useSharedVertices) || (submesh->useSharedVertices && !addShared)) {
+            if(submesh->useSharedVertices) {
+                addShared = true;
+                shared_offset = currentOffset;
+            }
+
+            const Ogre::VertexElement* posElem =
+                vertexData->vertexDeclaration->findElementBySemantic(Ogre::VES_POSITION);
+
+            Ogre::HardwareVertexBufferSharedPtr vbuf =
+                vertexData->vertexBufferBinding->getBuffer(posElem->getSource());
+
+            unsigned char* vertex =
+                static_cast<unsigned char*>(vbuf->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
+
+            float* pReal;
+
+            for( size_t j = 0; j < vertexData->vertexCount; ++j, vertex += vbuf->getVertexSize()) {
+                posElem->baseVertexPointerToElement(vertex, &pReal);
+                Ogre::Vector3 pt(pReal[0], pReal[1], pReal[2]);
+                vertices[currentOffset + j] = pt;
+            }
+            
+            vbuf->unlock();
+            nextOffset += vertexData->vertexCount;
+        }
+
+
+        Ogre::IndexData* indexData = submesh->indexData;
+        size_t numTris = indexData->indexCount / 3;
+        Ogre::HardwareIndexBufferSharedPtr ibuf = indexData->indexBuffer;
+        
+        bool use32bitindexes = (ibuf->getType() == Ogre::HardwareIndexBuffer::IT_32BIT);
+
+        unsigned long* pLong = static_cast<unsigned long*>(ibuf->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
+        unsigned short* pShort = reinterpret_cast<unsigned short*>(pLong);
+
+        size_t offset = (submesh->useSharedVertices)? shared_offset : currentOffset;
+
+        if ( use32bitindexes ) {
+            for ( size_t k = 0; k < numTris*3; ++k) {
+                indices[indexOffset++] = pLong[k] + static_cast<unsigned long>(offset);
+            }
+        }
+        else {
+            for ( size_t k = 0; k < numTris*3; ++k) {
+                indices[indexOffset++] = static_cast<unsigned long>(pShort[k]) +
+                                          static_cast<unsigned long>(offset);
+            }
+        }
+
+        ibuf->unlock();
+        currentOffset = nextOffset;
+    }
+}
+
+
+static ERL_NIF_TERM setup_world_physics(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char filename[255];
+    enif_get_atom(env,argv[0],filename,255);
+    Ogre::Entity *physicsEnt = sceneMgr->createEntity("PhysicsEntity", filename);
+
+    size_t vertexCount, indexCount;
+    Ogre::Vector3* vertices;
+    unsigned* indices;
+
+    GetMeshInformation(physicsEnt->getMesh(), vertexCount, vertices, indexCount, indices);
+    btTriangleIndexVertexArray *vertexArray = new btTriangleIndexVertexArray(
+        indexCount / 3,
+        (int *)(indices),
+        12,
+        vertexCount,
+        (btScalar *)(vertices),
+        12
+    );
+    
+    btBvhTriangleMeshShape *collisionShape = new btBvhTriangleMeshShape(vertexArray, true);
+
+    btDefaultMotionState *levelMotionState = new btDefaultMotionState(
+        btTransform(btQuaternion(0,0,0,1),btVector3(0,0,0))
+        );
+
+    btRigidBody::btRigidBodyConstructionInfo
+        levelRigidBodyCI(0, levelMotionState, collisionShape, btVector3(0,0,0));
+    btRigidBody* body = new btRigidBody(levelRigidBodyCI);
+    body->setFriction(0.9);
+
+    ERL_NIF_TERM term = wrap_pointer(env,btRigidBody_resource, body);
+    printf("FINITO\n");
+    return term;
 }
 
 static Quaternion get_quaternion(ErlNifEnv *env, const ERL_NIF_TERM *arg) {
@@ -87,6 +229,8 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     window = root->initialise(true);
 
     ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+    TextureManager::getSingleton().setDefaultNumMipmaps(0);
+
 
     sceneMgr = root->createSceneManager(ST_GENERIC);
     camera = sceneMgr->createCamera("MainCamera");
@@ -107,6 +251,7 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     camera->setNearClipDistance(0.1);
     camera->setFarClipDistance(1000);
     viewPort->setBackgroundColour(ColourValue(0.3,0.6,1.0));
+    sceneMgr->setFog(FOG_LINEAR, ColourValue(0.3, 0.6, 1.0), 0.0, 40.0, 100);
     camera->setAspectRatio(4.0/3.0);
     sceneMgr->setShadowTechnique(SHADOWTYPE_STENCIL_ADDITIVE);
 
@@ -152,13 +297,7 @@ static ERL_NIF_TERM key_down(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     return enif_make_atom(env,"false");
 }
 
-static ERL_NIF_TERM wrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,void* ptr) {
-    void** resource = (void**) enif_alloc_resource(env,type,sizeof(void*));
-    *resource = ptr;
-    ERL_NIF_TERM term = enif_make_resource(env,resource);
-    enif_release_resource(env,(void*)resource);
-    return term;
-}
+
 static void* unwrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,ERL_NIF_TERM term) {
     void* ptr;
     enif_get_resource(env,term,type,&ptr);
@@ -250,7 +389,6 @@ static ERL_NIF_TERM get_quaternion_inverse(ErlNifEnv* env, int argc, const ERL_N
 }
 static ERL_NIF_TERM get_average_fps(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_double(env, window->getAverageFPS());
-    return enif_make_atom(env, "ok");
 }
 
 static ERL_NIF_TERM get_animationstate(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
@@ -402,7 +540,6 @@ static ERL_NIF_TERM add_overlay_container_child(ErlNifEnv* env, int argc, const 
     return enif_make_atom(env, "ok");
 }
 
-
 static ERL_NIF_TERM log_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char message[4096];
     enif_get_string(env,argv[0],message,4096, ERL_NIF_LATIN1);
@@ -418,7 +555,6 @@ static ERL_NIF_TERM add_compositor(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
     Ogre::CompositorManager::getSingleton().setCompositorEnabled(viewPort, name, true);
     return enif_make_atom(env, "ok");
 }
-
 
 static ErlNifFunc nif_funcs[] =
 {
@@ -462,6 +598,7 @@ static ErlNifFunc nif_funcs[] =
     {"set_overlay_element_caption", 2, set_overlay_element_caption},
     {"add_overlay_container_child", 2, add_overlay_container_child},
     {"set_overlay_element_fontname", 2, set_overlay_element_fontname},
+    {"setup_world_physics", 1, setup_world_physics},
     {"add_compositor", 1, add_compositor}
 };
 
@@ -471,6 +608,9 @@ static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     animationstate_resource = enif_open_resource_type(env,"Ogre AnimationState",NULL,ERL_NIF_RT_CREATE,NULL);
     overlay_resource = enif_open_resource_type(env,"Ogre Overlay",NULL,ERL_NIF_RT_CREATE,NULL);
     overlaycontainer_resource = enif_open_resource_type(env,"Ogre OverlayContainer",NULL,ERL_NIF_RT_CREATE,NULL);
+    btRigidBody_resource = enif_open_resource_type(
+        env,"btRigidBody2",NULL,ERL_NIF_RT_CREATE,NULL
+    );
     return 0;
 }
 

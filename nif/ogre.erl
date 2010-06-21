@@ -1,5 +1,7 @@
 -module(ogre).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,add_compositor/1,play/3]).
+-import(bullet).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,add_compositor/1,setup_world_physics/1,play/3]).
+
 -on_load(load_c_module/0).
 load_c_module() ->
       erlang:load_nif("./ogre", 0).
@@ -44,9 +46,10 @@ set_overlay_element_parameter(_,_,_) -> throw('nif library not loaded').
 set_overlay_element_caption(_,_) -> throw('nif library not loaded').
 add_overlay_container_child(_,_) -> throw('nif library not loaded').
 set_overlay_element_fontname(_,_) -> throw('nif library not loaded').
+setup_world_physics(_) -> throw('nif library not loaded').
 add_compositor(_) -> throw('nif library not loaded').
 
--record(player,{id,leftDown,rightDown,upDown,downDown,node,entity}).
+-record(player,{id,leftDown,rightDown,upDown,downDown,node,entity,body}).
 
 init_text_overlay() ->
     Overlay = create_overlay('ov1'),
@@ -80,19 +83,41 @@ log_console([Tb|Console], Format, Args) ->
     set_overlay_element_caption(Tb, Str),
     Console++[Tb].
     
-create_player(ID, Mesh) ->
+create_player(ID, Mesh, BulletWorld) ->
     Node = create_scenenode(),
     Entity=create_entity(Mesh),
     attach_entity_to_node(Entity,Node),
     ClubEntity = create_entity('PoliceClub.mesh'),
     attach_entity_to_bone(Entity, ClubEntity, 'Bone.001_R.004'),
 
+    ColShape = bullet:new_btCylinderShape({0.25, 1.0, 0.25}),
+    MotionState = bullet:new_btDefaultMotionState({{0,0,0,1}, {0,0,0}}),
+    Mass = 70.0,
+    Inertia = bullet:btCollisionShape_calculateLocalInertia(ColShape, Mass),
+    BodyCI = bullet:new_btRigidBodyConstructionInfo(Mass, MotionState, ColShape, Inertia),
+    Body = bullet:new_btRigidBody(BodyCI),
+
+    bullet:btRigidBody_translate(Body, {0,5.0, 0}),
+    bullet:btRigidBody_setActivationState(Body, 4), % disable deavtivation
+
+    bullet:btDynamicsWorld_addRigidBody(BulletWorld, Body),
+
+
     set_node_position(Node,{0.0,0.0,0.0}),
-    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node,entity=Entity}.
+    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node,entity=Entity,body=Body}.
 
 play(ID, Clients, Players_) ->
     init_ogre(),
-    %add_compositor('Bloom'),
+
+    Broadphase = bullet:new_btDbvtBroadphase(),
+    DCConfiguration = bullet:new_btDefaultCollisionConfiguration(),
+    ColDispatcher = bullet:new_btCollisionDispatcher(),
+    ConstraintSolver = bullet:new_btSequentialImpulseConstraintSolver(),
+    BulletWorld = bullet:new_btDiscreteDynamicsWorld(ColDispatcher, Broadphase, ConstraintSolver, DCConfiguration),
+
+
+
+    add_compositor('Bloom'),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
     create_textbox(Panel, 'ver', 10.0, 480.0, 500.0, 30.0, {1.0, 0.0, 0.0}, ?VERSION),
@@ -105,10 +130,14 @@ play(ID, Clients, Players_) ->
     GrassEntity = create_entity('Grass.mesh'),
     attach_entity_to_node(GrassEntity, GrassNode),
     register(ID, self()),
+
+    WorldBody = setup_world_physics('Grass.mesh'),
+    bullet:btDynamicsWorld_addRigidBody(BulletWorld, WorldBody),
+
     Players = lists:map(
-        fun (p0) -> create_player(p0, 'Policeman.mesh');
-            (p1) -> create_player(p1, 'Blackman.mesh') end,Players_),
-    play_loop(1,ID, Players, {false,false,false,false}, [self()|Clients], Con),
+        fun (p0) -> create_player(p0, 'Bully.mesh',BulletWorld);
+            (p1) -> create_player(p1, 'Blackman.mesh',BulletWorld) end,Players_),
+    play_loop(1,ID, Players, {false,false,false,false}, [self()|Clients], Con, BulletWorld),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -183,7 +212,10 @@ player_logic(Player) ->
     case Player#player.rightDown of
         true -> rotate_node(Player#player.node,RightRotation);
         false -> ok
-    end.
+    end,
+    Body = Player#player.body,
+    BodyPos = bullet:btRigidBody_getCenterOfMassPosition(Body),
+    set_node_position(Node, BodyPos).
 
 vec_cross_product({X1,Y1,Z1}, {X2,Y2,Z2}) ->
     {Y1 * Z2 - Z1 * Y2, 
@@ -218,9 +250,12 @@ find_localplayer(Players,LocalPlayerID) ->
     [LocalPlayer] = lists:filter((fun(Player) -> ID = Player#player.id, ID == LocalPlayerID end), Players),
     LocalPlayer.
 
-play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
+play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console,BulletWorld) ->
     capture_input(),
+    bullet:btDynamicsWorld_stepSimulation(BulletWorld),
     render_frame(),
+    io:format("CHUJ"),
+
 
     {NewInputState,Input} = handle_input(InputState),
 
@@ -258,7 +293,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console) ->
     Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> 
-            play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole);
+            play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole,BulletWorld);
         true -> halt
     end.
 
