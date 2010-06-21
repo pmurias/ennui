@@ -9,6 +9,7 @@ new_btDbvtBroadphase/0
 ,new_btBoxShape/1
 ,new_btSphereShape/1
 ,new_btCylinderShape/1
+,new_btDefaultMotionState/1
 
 ]).
 -on_load(load_c_module/0).
@@ -23,3 +24,4 @@ btDynamicsWorld_setGravity(_,_) -> throw('nif library not loaded').
 new_btBoxShape(_) -> throw('nif library not loaded').
 new_btSphereShape(_) -> throw('nif library not loaded').
 new_btCylinderShape(_) -> throw('nif library not loaded').
+new_btDefaultMotionState(_) -> throw('nif library not loaded').

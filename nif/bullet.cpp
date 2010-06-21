@@ -13,6 +13,7 @@ static ErlNifResourceType* btCollisionDispatcher_resource;
 static ErlNifResourceType* btSequentialImpulseConstraintSolver_resource;
 static ErlNifResourceType* btDynamicsWorld_resource;
 static ErlNifResourceType* btCollisionShape_resource;
+static ErlNifResourceType* btMotionState_resource;
 
 
 
@@ -40,6 +41,25 @@ static btVector3 get_vector(ErlNifEnv *env, const ERL_NIF_TERM arg) {
     enif_get_double(env, tuple[1], &y);
     enif_get_double(env, tuple[2], &z);
     return btVector3(x,y,z);
+}
+
+static btQuaternion get_quaternion(ErlNifEnv *env, const ERL_NIF_TERM arg) {
+    double x,y,z,w;
+    const ERL_NIF_TERM *tuple;
+    int arity;
+    enif_get_tuple(env, arg, &arity, &tuple);
+    enif_get_double(env, tuple[0], &x);
+    enif_get_double(env, tuple[1], &y);
+    enif_get_double(env, tuple[2], &z);
+    enif_get_double(env, tuple[3], &w);
+    return btQuaternion(x,y,z,w);
+}
+static btTransform get_transform(ErlNifEnv *env, const ERL_NIF_TERM arg) {
+    double x,y,z,w;
+    const ERL_NIF_TERM *tuple;
+    int arity;
+    enif_get_tuple(env, arg, &arity, &tuple);
+    return btTransform(get_quaternion(env,tuple[0]),get_vector(env,tuple[1]));
 }
 
 static ERL_NIF_TERM new_btDbvtBroadphase(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
@@ -98,6 +118,14 @@ static ERL_NIF_TERM new_btDiscreteDynamicsWorld(ErlNifEnv* env, int argc, const 
     ));
 }
 
+static ERL_NIF_TERM btDynamicsWorld_setGravity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    ((btDynamicsWorld*)unwrap_pointer(
+        env,
+        btDynamicsWorld_resource,
+        argv[0]
+    ))->setGravity(get_vector(env,argv[1]));
+    return enif_make_atom(env, "ok");
+}
 
 static ERL_NIF_TERM new_btBoxShape(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     return wrap_pointer(env,btCollisionShape_resource,(void*)new btBoxShape(get_vector(env,argv[0])));
@@ -111,14 +139,10 @@ static ERL_NIF_TERM new_btCylinderShape(ErlNifEnv* env, int argc, const ERL_NIF_
     return wrap_pointer(env,btCollisionShape_resource,new btCylinderShape(get_vector(env,argv[0])));
 }
 
-static ERL_NIF_TERM btDynamicsWorld_setGravity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    ((btDynamicsWorld*)unwrap_pointer(
-        env,
-        btDynamicsWorld_resource,
-        argv[0]
-    ))->setGravity(get_vector(env,argv[1]));
-    return enif_make_atom(env, "ok");
+static ERL_NIF_TERM new_btDefaultMotionState(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    return wrap_pointer(env,btMotionState_resource,new btDefaultMotionState(get_transform(env,argv[0])));
 }
+
 
 
 static ErlNifFunc nif_funcs[] =
@@ -133,7 +157,8 @@ static ErlNifFunc nif_funcs[] =
 
     {"new_btBoxShape", 1, new_btBoxShape},
     {"new_btSphereShape", 1, new_btSphereShape},
-    {"new_btCylinderShape", 1, new_btCylinderShape}
+    {"new_btCylinderShape", 1, new_btCylinderShape},
+    {"new_btDefaultMotionState", 2, new_btDefaultMotionState}
 
 };
 
@@ -157,6 +182,10 @@ static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
 
     btCollisionShape_resource = enif_open_resource_type(
         env,"btCollisionShape",NULL,ERL_NIF_RT_CREATE,NULL
+    );
+
+    btMotionState_resource = enif_open_resource_type(
+        env,"btMotionState",NULL,ERL_NIF_RT_CREATE,NULL
     );
 
     return 0;
