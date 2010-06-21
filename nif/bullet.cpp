@@ -15,18 +15,6 @@ static ErlNifResourceType* btDynamicsWorld_resource;
 
 
 
-/*
-static Vector3 get_vector(ErlNifEnv *env, const ERL_NIF_TERM *arg) {
-    double x,y,z,w;
-    const ERL_NIF_TERM *tuple;
-    int arity;
-    enif_get_tuple(env, *arg, &arity, &tuple);
-    enif_get_double(env, tuple[0], &x);
-    enif_get_double(env, tuple[1], &y);
-    enif_get_double(env, tuple[2], &z);
-    return Vector3(x,y,z);
-}
-*/
 
 static ERL_NIF_TERM wrap_pointer(ErlNifEnv* env,ErlNifResourceType* type,void* ptr) {
     void** resource = (void**) enif_alloc_resource(env,type,sizeof(void*));
