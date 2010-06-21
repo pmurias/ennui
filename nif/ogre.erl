@@ -90,8 +90,8 @@ create_player(ID, Mesh, BulletWorld) ->
     ClubEntity = create_entity('PoliceClub.mesh'),
     attach_entity_to_bone(Entity, ClubEntity, 'Bone.001_R.004'),
 
-    ColShape = bullet:new_btCylinderShape({0.25, 1.0, 0.25}),
-    MotionState = bullet:new_btDefaultMotionState({{0,0,0,1}, {0,0,0}}),
+    ColShape = bullet:new_btCylinderShape({0.6, 0.8, 0.0}),
+    MotionState = bullet:new_btDefaultMotionState({{0.0,0.0,0.0,1.0}, {0.0,20.0,0.0}}),
     Mass = 70.0,
     Inertia = bullet:btCollisionShape_calculateLocalInertia(ColShape, Mass),
     BodyCI = bullet:new_btRigidBodyConstructionInfo(Mass, MotionState, ColShape, Inertia),
@@ -99,6 +99,7 @@ create_player(ID, Mesh, BulletWorld) ->
 
     bullet:btRigidBody_translate(Body, {0,5.0, 0}),
     bullet:btRigidBody_setActivationState(Body, 4), % disable deavtivation
+    bullet:btRigidBody_setAngularFactor(Body, {0.0, 1.0, 0.0}),
 
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, Body),
 
@@ -116,8 +117,7 @@ play(ID, Clients, Players_) ->
     BulletWorld = bullet:new_btDiscreteDynamicsWorld(ColDispatcher, Broadphase, ConstraintSolver, DCConfiguration),
 
 
-
-    add_compositor('Bloom'),
+%    add_compositor('Bloom'),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
     create_textbox(Panel, 'ver', 10.0, 480.0, 500.0, 30.0, {1.0, 0.0, 0.0}, ?VERSION),
@@ -131,7 +131,8 @@ play(ID, Clients, Players_) ->
     attach_entity_to_node(GrassEntity, GrassNode),
     register(ID, self()),
 
-    WorldBody = setup_world_physics('Grass.mesh'),
+    WorldBodyInt = setup_world_physics('Grass.mesh'),
+    WorldBody = bullet:btIntToBody(WorldBodyInt),
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, WorldBody),
 
     Players = lists:map(
@@ -186,12 +187,14 @@ handle_player(Player,Input) ->
     ).
 
 player_logic(Player) ->
-    Speed = 0.1,
+    Speed = 10.0,
     LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
     RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
     RunAnimState = get_animationstate(Player#player.entity, 'Run'),
     IdleAnimState = get_animationstate(Player#player.entity, 'Idle'),
     Node = Player#player.node,
+    Body = Player#player.body,
+    CurrentVelocity = bullet:btRigidBody_getLinearVelocity(Body),
     Pos = get_node_position(Node),
     log("player ~p position: ~p", [Player#player.id, Pos]),
     case Player#player.leftDown of
@@ -199,11 +202,16 @@ player_logic(Player) ->
         false -> ok
     end,
     case Player#player.upDown of
-        true -> move_node(Player#player.node,{0,0.0,Speed}), 
-            set_animationstate_enabled(IdleAnimState, 0),        
+        true -> 
+            Forward = vec_mult_quat({0.0, vec_y(CurrentVelocity) - 0.41, Speed}, get_node_orientation(Node)),
+            bullet:btRigidBody_setLinearVelocity(Body, Forward),
+            bullet:btRigidBody_setFriction(Body, 0.0),
+            set_animationstate_enabled(IdleAnimState, 0),
             set_animationstate_enabled(RunAnimState, 1),
             add_animationstate_time(RunAnimState, 0.01666);
         false ->
+            bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
+            bullet:btRigidBody_setFriction(Body, 1.0),
             set_animationstate_enabled(IdleAnimState, 1),
             set_animationstate_enabled(RunAnimState, 0),
             add_animationstate_time(IdleAnimState, 0.00666),
@@ -213,9 +221,12 @@ player_logic(Player) ->
         true -> rotate_node(Player#player.node,RightRotation);
         false -> ok
     end,
-    Body = Player#player.body,
-    BodyPos = bullet:btRigidBody_getCenterOfMassPosition(Body),
-    set_node_position(Node, BodyPos).
+    {Bx,By,Bz} = bullet:btRigidBody_getCenterOfMassPosition(Body),
+    set_node_position(Node, {Bx,By-1.0,Bz}).
+
+vec_x({V,_,_}) -> V.
+vec_y({_,V,_}) -> V.
+vec_z({_,_,V}) -> V.
 
 vec_cross_product({X1,Y1,Z1}, {X2,Y2,Z2}) ->
     {Y1 * Z2 - Z1 * Y2, 
@@ -236,13 +247,13 @@ quat_mult_quat({W1,X1,Y1,Z1}, {W2,X2,Y2,Z2}) ->
       W1 * Z2 + Z1 * W2 + X1 * Y2 - Y1 * X2 }.
 
 move_node(Node,By) ->
-   {X,Y,Z} = get_node_position(Node),
+    {X,Y,Z} = get_node_position(Node),
     Orientation = get_node_orientation(Node),
     {ByX, ByY, ByZ} = vec_mult_quat(By, Orientation),
     set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
 rotate_node(Node, By) ->
-    CurrentOrientation = get_node_orientation(Node), 
+    CurrentOrientation = get_node_orientation(Node),
     NewOrientation = quat_mult_quat(CurrentOrientation, By),
     set_node_orientation(Node, NewOrientation).
 
@@ -254,8 +265,6 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console,BulletWorld) ->
     capture_input(),
     bullet:btDynamicsWorld_stepSimulation(BulletWorld),
     render_frame(),
-    io:format("CHUJ"),
-
 
     {NewInputState,Input} = handle_input(InputState),
 
@@ -272,7 +281,6 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console,BulletWorld) ->
         end
     end,Players),
 
-    NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
 
     lists:foreach(fun player_logic/1,NewPlayers),
     LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
@@ -280,6 +288,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console,BulletWorld) ->
 
     LPNode = LocalPlayer#player.node,
     {X,Y,Z} = get_node_position(LPNode),
+    NewConsole = log_console(Console, "FPS ~w ~w", [get_average_fps(), Y]),
     NodeOrientation = get_node_orientation(LPNode),
     CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
     Camera180Rotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}),

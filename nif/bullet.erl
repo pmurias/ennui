@@ -23,7 +23,10 @@ new_btDbvtBroadphase/0
 ,btRigidBody_setWorldTransform/2
 ,btRigidBody_setAngularFactor/2
 ,btRigidBody_setActivationState/2
+,btRigidBody_setLinearVelocity/2
+,btRigidBody_getLinearVelocity/1
 ,btDynamicsWorld_stepSimulation/1
+,btIntToBody/1
 
 ]).
 -on_load(load_c_module/0).
@@ -52,5 +55,9 @@ btRigidBody_translate(_,_) -> throw('nif library not loaded').
 btRigidBody_setWorldTransform(_,_) -> throw('nif library not loaded').
 btRigidBody_setAngularFactor(_,_) -> throw('nif library not loaded').
 btRigidBody_setActivationState(_,_) -> throw('nif library not loaded').
+btRigidBody_setLinearVelocity(_,_) -> throw('nif library not loaded').
+btRigidBody_getLinearVelocity(_) -> throw('nif library not loaded').
 btDynamicsWorld_stepSimulation(_) -> throw('nif library not loaded').
+btIntToBody(_) -> throw('nif library not loaded').
+
 

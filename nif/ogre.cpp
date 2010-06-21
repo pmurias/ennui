@@ -168,8 +168,8 @@ static ERL_NIF_TERM setup_world_physics(ErlNifEnv* env, int argc, const ERL_NIF_
     btRigidBody* body = new btRigidBody(levelRigidBodyCI);
     body->setFriction(0.9);
 
-    ERL_NIF_TERM term = wrap_pointer(env,btRigidBody_resource, body);
-    printf("FINITO\n");
+//    ERL_NIF_TERM term = wrap_pointer(env,btRigidBody_resource, body);
+    ERL_NIF_TERM term = enif_make_int(env, (int)(body));
     return term;
 }
 
@@ -608,9 +608,6 @@ static int load(ErlNifEnv* env,void** priv_data,ERL_NIF_TERM load_info) {
     animationstate_resource = enif_open_resource_type(env,"Ogre AnimationState",NULL,ERL_NIF_RT_CREATE,NULL);
     overlay_resource = enif_open_resource_type(env,"Ogre Overlay",NULL,ERL_NIF_RT_CREATE,NULL);
     overlaycontainer_resource = enif_open_resource_type(env,"Ogre OverlayContainer",NULL,ERL_NIF_RT_CREATE,NULL);
-    btRigidBody_resource = enif_open_resource_type(
-        env,"btRigidBody2",NULL,ERL_NIF_RT_CREATE,NULL
-    );
     return 0;
 }
 
