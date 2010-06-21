@@ -181,6 +181,24 @@ static ERL_NIF_TERM new_btRigidBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         ));
 }
 
+static ERL_NIF_TERM btRigidBody_setDamping(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    double lin_damping,and_damping;
+    enif_get_double(env, argv[1], &lin_damping);
+    enif_get_double(env, argv[2], &and_damping);
+    ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->setDamping(lin_damping,and_damping);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM btDynamicsWorld_addRigidBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    ((btDynamicsWorld*)unwrap_pointer(env,btDynamicsWorld_resource,argv[0]))->addRigidBody((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[1]));
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM btDynamicsWorld_removeRigidBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    ((btDynamicsWorld*)unwrap_pointer(env,btDynamicsWorld_resource,argv[0]))->removeRigidBody((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[1]));
+    return enif_make_atom(env, "ok");
+}
+
 
 static ErlNifFunc nif_funcs[] =
 {
