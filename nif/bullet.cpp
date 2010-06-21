@@ -189,6 +189,13 @@ static ERL_NIF_TERM btRigidBody_setDamping(ErlNifEnv* env, int argc, const ERL_N
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM btRigidBody_setFriction(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    double friction;
+    enif_get_double(env, argv[1], &friction);
+    ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->setFriction(friction);
+    return enif_make_atom(env, "ok");
+}
+
 static ERL_NIF_TERM btDynamicsWorld_addRigidBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     ((btDynamicsWorld*)unwrap_pointer(env,btDynamicsWorld_resource,argv[0]))->addRigidBody((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[1]));
     return enif_make_atom(env, "ok");
