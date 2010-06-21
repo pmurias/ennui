@@ -20,8 +20,9 @@ btDynamicsWorld_addRigidBody 2
 btDynamicsWorld_removeRigidBody 2
 
 btRigidBody_getCenterOfMassPosition 1
-btRigidBody_getOrientation
+btRigidBody_getOrientation 1
 
-btRigidBody_translate
+btRigidBody_translate 2
 
-btRigidBody_setWorldTransform
+btRigidBody_setWorldTransform 2
+btRigidBody_setAngularFactor 1

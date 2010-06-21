@@ -229,6 +229,13 @@ static ERL_NIF_TERM btRigidBody_setWorldTransform(ErlNifEnv* env, int argc, cons
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM btRigidBody_setAngularFactor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    double angular_factor;
+    enif_get_double(env, argv[1], &angular_factor);
+    ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->setAngularFactor(angular_factor);
+    return enif_make_atom(env, "ok");
+}
+
 static ErlNifFunc nif_funcs[] =
 {
 
