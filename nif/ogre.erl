@@ -51,7 +51,7 @@ set_overlay_element_fontname(_,_) -> throw('nif library not loaded').
 setup_world_physics(_) -> throw('nif library not loaded').
 add_compositor(_) -> throw('nif library not loaded').
 
--record(player,{id,leftDown,rightDown,upDown,downDown,attacks,node,entity,body}).
+-record(player,{id,leftDown,rightDown,upDown,downDown,attacks,node,entity,body,hp}).
 -record(bully,{node,entity,body,covers,hp,actions,idle}).
 
 init_text_overlay() ->
@@ -108,21 +108,21 @@ create_player(ID, Mesh, BulletWorld) ->
 
 
     set_node_position(Node,{0.0,0.0,0.0}),
-    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,attacks=false,node=Node,entity=Entity,body=Body}.
+    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,attacks=false,node=Node,entity=Entity,body=Body,hp=120}.
 
-create_enemy(Mesh, BulletWorld, Idle) ->
+create_enemy(Mesh, BulletWorld, Idle, StartPos) ->
     Node = create_scenenode(),
     Entity=create_entity(Mesh),
     attach_entity_to_node(Entity,Node),
 
     ColShape = bullet:new_btCylinderShape({0.6, 0.8, 0.0}),
-    MotionState = bullet:new_btDefaultMotionState({{0.0,0.0,0.0,1.0}, {0.0,20.0,0.0}}),
+    MotionState = bullet:new_btDefaultMotionState({{0.0,0.0,0.0,1.0}, {0.0,0.0,0.0}}),
     Mass = 20.0,
     Inertia = bullet:btCollisionShape_calculateLocalInertia(ColShape, Mass),
     BodyCI = bullet:new_btRigidBodyConstructionInfo(Mass, MotionState, ColShape, Inertia),
     Body = bullet:new_btRigidBody(BodyCI),
 
-    bullet:btRigidBody_translate(Body, {0,5.0, 0}),
+    bullet:btRigidBody_translate(Body, StartPos),
     bullet:btRigidBody_setActivationState(Body, 4), % disable deavtivation
     bullet:btRigidBody_setAngularFactor(Body, {0.0, 1.0, 0.0}),
 
@@ -157,12 +157,18 @@ play(ID, Clients, Players_) ->
     WorldBody = bullet:btIntToBody(WorldBodyInt),
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, WorldBody),
 
-    Enemies = [ create_enemy('Bully.mesh', BulletWorld, []) ],
+    Enemies = [ 
+        create_enemy('Bully.mesh', BulletWorld, [], {10.0, 5.0, 10.0} ) 
+        ,
+        create_enemy('Bully.mesh', BulletWorld, [], {5.0, 5.0, 10.0} ) 
+        ,
+        create_enemy('Bully.mesh', BulletWorld, [], {3.0, 5.0, 10.0} ) 
+        ],
 
     Players = lists:map(
         fun (p0) -> create_player(p0, 'Policeman.mesh',BulletWorld);
             (p1) -> create_player(p1, 'Blackman.mesh',BulletWorld) end,Players_),
-    play_loop(1,ID, Players, Enemies, {false,false,false,false,false}, [self()|Clients], Con, BulletWorld),
+    play_loop(1,ID, Players, Enemies, {false,false,false,false,false}, [self()|Clients], Con, BulletWorld, []),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -241,9 +247,7 @@ findClosestPlayer(Pos, Players) ->
 
 
 enemy_logic(Enemy=#bully{}, Hits, Players) ->
-    Speed = 3.0,
-    %LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
-    %RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
+    Speed = 4.5,
     RunAnimState = get_animationstate(Enemy#bully.entity, 'Run'),
     IdleAnimState = get_animationstate(Enemy#bully.entity, 'Idle'),
     FuryAnimState = get_animationstate(Enemy#bully.entity, 'Fury'),
@@ -252,7 +256,7 @@ enemy_logic(Enemy=#bully{}, Hits, Players) ->
     Body = Enemy#bully.body,
     CurrentVelocity = bullet:btRigidBody_getLinearVelocity(Body),
     Pos = get_node_position(Node),
-    NewActions = case Enemy#bully.covers of
+    {NewActions,NewHits} = case Enemy#bully.covers of
         true ->
             set_animationstate_enabled(IdleAnimState, 0),
             set_animationstate_enabled(RunAnimState, 0),
@@ -261,7 +265,7 @@ enemy_logic(Enemy=#bully{}, Hits, Players) ->
             set_animationstate_loop(CoversAnimState, 0),
             bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
             add_animationstate_time(CoversAnimState, 0.00666),
-            [];
+            {[], ignore};
         false ->
             set_animationstate_enabled(IdleAnimState, 1),
             set_animationstate_enabled(RunAnimState, 0),
@@ -272,37 +276,41 @@ enemy_logic(Enemy=#bully{}, Hits, Players) ->
                 [] ->
                     Closest = findClosestPlayer(Pos,Players),
                     case Closest of
-                        too_far -> Enemy#bully.idle;
+                        too_far -> {Enemy#bully.idle, ignore};
                         Player ->
-                            [{go,get_node_position(Player#player.node)},{attack,90}]
+                            {[{go,get_node_position(Player#player.node),600},{attack,90}], ignore}
                     end;
-                [{go,Destination}|Rest]->
+                [{go,Destination,Frames}|Rest]->
                     Direction = vec_sub(Destination,Pos),
                     Dist = vec_length(Direction),
                     if
+                        Frames == 1 ->
+                            {[], ignore};
                         Dist < 0.5 ->
-                            Rest;
+                            {Rest, ignore};
                         true ->
                             set_animationstate_enabled(IdleAnimState, 0),
                             set_animationstate_enabled(RunAnimState, 1),
                             set_animationstate_enabled(FuryAnimState, 0),
                             set_animationstate_enabled(CoversAnimState,0 ),
-                            add_animationstate_time(RunAnimState, 0.01666),
-                            DesiredVelocity = vec_mult_scalar(vec_normalize(Direction),Speed),
+                            add_animationstate_time(RunAnimState, 0.03666),
+                            DirectionNorm = vec_normalize(Direction), 
+                            set_node_orientation(Node, get_rotation_to({0.0,0.0,1.0}, {vec_x(DirectionNorm),0.0,vec_z(DirectionNorm)})),
+                            DesiredVelocity = vec_mult_scalar(DirectionNorm,Speed),
                             bullet:btRigidBody_setLinearVelocity(Body, {vec_x(DesiredVelocity), vec_y(CurrentVelocity) - 0.41, vec_z(DesiredVelocity)}),
-                            [{go,Destination}|Rest]
+                            {[{go,Destination,Frames-1}|Rest], ignore}
                     end;
                 [{attack,Frames}|Rest] ->
                     case Frames of
                         1 ->
-                            Rest;
+                            {Rest, ignore};
                         _ ->
                             set_animationstate_enabled(IdleAnimState, 0),
                             set_animationstate_enabled(RunAnimState, 0),
                             set_animationstate_enabled(FuryAnimState, 1),
                             set_animationstate_enabled(CoversAnimState,0 ),
                             add_animationstate_time(FuryAnimState, 0.01666),
-                            [{attack,Frames-1}|Rest]
+                            {[{attack,Frames-1}|Rest], Pos}
                     end
             end
     end,
@@ -329,71 +337,88 @@ enemy_logic(Enemy=#bully{}, Hits, Players) ->
             end;
         false -> Enemy
     end,
-    Enemy0#bully{actions=NewActions}.
+    {Enemy0#bully{actions=NewActions}, NewHits}.
 
 
-player_logic(Player) ->
+player_logic(Player, EnemyHits) ->
     Speed = 5.0,
     LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
     RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
     RunAnimState = get_animationstate(Player#player.entity, 'Run'),
     IdleAnimState = get_animationstate(Player#player.entity, 'Idle'),
+    CoversAnimState = get_animationstate(Player#player.entity, 'Cover'),
     Melee1AnimState = get_animationstate(Player#player.entity, 'MeeleHit1'),
     Node = Player#player.node,
     Body = Player#player.body,
     CurrentVelocity = bullet:btRigidBody_getLinearVelocity(Body),
     Pos = get_node_position(Node),
-    log("player ~p position: ~p", [Player#player.id, Pos]),
-    case Player#player.attacks of
-        true ->
+    HitCount = length(lists:filter(fun(Hit) ->
+        HitDist = vec_length(vec_sub(Pos,Hit)),
+        HitDist < 2.0 end, EnemyHits)),
+
+    if 
+        Player#player.hp < 0 ->
             set_animationstate_enabled(IdleAnimState, 0),
             set_animationstate_enabled(RunAnimState, 0),
-            set_animationstate_enabled(Melee1AnimState, 1),
-            add_animationstate_time(Melee1AnimState, 0.01666);
-        false -> 
-            case Player#player.upDown of
-                true -> 
-                    Forward = vec_mult_quat({0.0, vec_y(CurrentVelocity) - 0.41, Speed}, get_node_orientation(Node)),
-                    bullet:btRigidBody_setLinearVelocity(Body, Forward),
-                    bullet:btRigidBody_setFriction(Body, 0.0),
-                    set_animationstate_enabled(IdleAnimState, 0),
-                    set_animationstate_enabled(RunAnimState, 1),
-                    set_animationstate_enabled(Melee1AnimState, 0),
-                    add_animationstate_time(RunAnimState, 0.01666);
-                false ->
-                    bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
-                    bullet:btRigidBody_setFriction(Body, 1.0),
-                    set_animationstate_enabled(IdleAnimState, 1),
-                    set_animationstate_enabled(RunAnimState, 0),
-                    set_animationstate_enabled(Melee1AnimState, 0),
-                    add_animationstate_time(IdleAnimState, 0.00666),
-                    ok
-            end
-    end,
-    case Player#player.leftDown of
-        true -> rotate_node(Player#player.node,LeftRotation);
-        false -> ok
-    end,
-    case Player#player.rightDown of
-        true -> rotate_node(Player#player.node,RightRotation);
-        false -> ok
-    end,
-    case Player#player.attacks of
-        true ->
-            AnimTime = get_animationstate_time(Melee1AnimState),
-            if
-                AnimTime > 0.43 ->
-                    set_animationstate_time(Melee1AnimState, 0.0),
-                    { Player#player{attacks=false}, {player_attack, Pos} };
+            set_animationstate_enabled(CoversAnimState, 1),
+            set_animationstate_enabled(Melee1AnimState, 0),
+            set_animationstate_loop(CoversAnimState, 0),
+            add_animationstate_time(CoversAnimState, 0.01666),
+            { Player, ignore };
+        true ->        
+            case Player#player.attacks of
                 true ->
+                    set_animationstate_enabled(IdleAnimState, 0),
+                    set_animationstate_enabled(RunAnimState, 0),
+                    set_animationstate_enabled(CoversAnimState, 0),
+                    set_animationstate_enabled(Melee1AnimState, 1),
+                    add_animationstate_time(Melee1AnimState, 0.01666);
+                false -> 
+                    case Player#player.upDown of
+                        true -> 
+                            Forward = vec_mult_quat({0.0, vec_y(CurrentVelocity) - 0.41, Speed}, get_node_orientation(Node)),
+                            bullet:btRigidBody_setLinearVelocity(Body, Forward),
+                            bullet:btRigidBody_setFriction(Body, 0.0),
+                            set_animationstate_enabled(IdleAnimState, 0),
+                            set_animationstate_enabled(RunAnimState, 1),
+                            set_animationstate_enabled(CoversAnimState, 0),
+                            set_animationstate_enabled(Melee1AnimState, 0),
+                            add_animationstate_time(RunAnimState, 0.01666);
+                        false ->
+                            bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
+                            bullet:btRigidBody_setFriction(Body, 1.0),
+                            set_animationstate_enabled(IdleAnimState, 1),
+                            set_animationstate_enabled(RunAnimState, 0),
+                            set_animationstate_enabled(CoversAnimState, 0),
+                            set_animationstate_enabled(Melee1AnimState, 0),
+                            add_animationstate_time(IdleAnimState, 0.00666),
+                            ok
+                    end
+            end,
+            case Player#player.leftDown of
+                true -> rotate_node(Player#player.node,LeftRotation);
+                false -> ok
+            end,
+            case Player#player.rightDown of
+                true -> rotate_node(Player#player.node,RightRotation);
+                false -> ok
+            end,
+            { Player0, Attacks } = case Player#player.attacks of
+                true ->
+                    AnimTime = get_animationstate_time(Melee1AnimState),
+                    if
+                        AnimTime > 0.43 ->
+                            set_animationstate_time(Melee1AnimState, 0.0),
+                            { Player#player{attacks=false}, {player_attack, Pos} };
+                        true ->
+                            { Player, ignore }
+                    end;
+                false ->
                     { Player, ignore }
-            end;
-        false ->
-            { Player, ignore }
+            end,
+            { Player0#player{hp=Player#player.hp-HitCount}, Attacks}
     end.
  
-
-
 
 vec_x({V,_,_}) -> V.
 vec_y({_,V,_}) -> V.
@@ -472,7 +497,7 @@ set_all_positions(Players, Enemies, {PlPos, EnPos}) ->
 
 
 
-play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletWorld) ->
+play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletWorld,PreviousHits) ->
     capture_input(),
     bullet:btDynamicsWorld_stepSimulation(BulletWorld),
     render_frame(),
@@ -499,14 +524,19 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
         end
     end,Players),
 
-    {NewPlayers2,Hits} = lists:unzip(lists:map(fun player_logic/1,NewPlayers)),
+    {NewPlayers2,Hits} = lists:unzip(lists:map(fun(Player) -> player_logic(Player,PreviousHits) end,NewPlayers)),
     RealHits = lists:filter(fun (Hit) -> 
         case Hit of
             ignore -> false;
             _ -> true
         end end, Hits),
     
-    NewEnemies = lists:map(fun (Enemy) -> enemy_logic(Enemy,RealHits,NewPlayers2) end,Enemies),
+    {NewEnemies,EnemyHits} = lists:unzip(lists:map(fun (Enemy) -> enemy_logic(Enemy,RealHits,NewPlayers2) end,Enemies)),
+    RealEnemyHits = lists:filter(fun (Hit) -> 
+        case Hit of
+            ignore -> false;
+            _ -> true
+        end end, EnemyHits),
     LocalPlayer = find_localplayer(NewPlayers2,LocalPlayerID),
 
 
@@ -526,7 +556,7 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
     Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> 
-            play_loop(Frame+1,LocalPlayerID,NewPlayers2,NewEnemies,NewInputState,Clients,NewConsole,BulletWorld);
+            play_loop(Frame+1,LocalPlayerID,NewPlayers2,NewEnemies,NewInputState,Clients,NewConsole,BulletWorld,RealEnemyHits);
         true -> halt
     end.
 
