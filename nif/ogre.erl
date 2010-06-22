@@ -227,6 +227,7 @@ enemy_logic(Enemy=#bully{}) ->
     {Bx,By,Bz} = bullet:btRigidBody_getCenterOfMassPosition(Body),
     set_node_position(Node, {Bx,By-1.0,Bz}).
 
+
 player_logic(Player) ->
     Speed = 5.0,
     LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
@@ -287,6 +288,10 @@ quat_mult_quat({W1,X1,Y1,Z1}, {W2,X2,Y2,Z2}) ->
       W1 * Y2 + Y1 * W2 + Z1 * X2 - X1 * Z2,
       W1 * Z2 + Z1 * W2 + X1 * Y2 - Y1 * X2 }.
 
+vec_sub({X1,Y1,Z1},{X2,Y2,Z2}) -> {X1-X2,Y1-Y2,Z1-Z2}.
+vec_add({X1,Y1,Z1},{X2,Y2,Z2}) -> {X1+X2,Y1+Y2,Z1+Z2}.
+vec_length({X,Y,Z}) -> math:sqrt(X*X + Y*Y + Z*Z).
+
 move_node(Node,By) ->
     {X,Y,Z} = get_node_position(Node),
     Orientation = get_node_orientation(Node),
@@ -331,7 +336,7 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
 
     LPNode = LocalPlayer#player.node,
     {X,Y,Z} = get_node_position(LPNode),
-    NewConsole = log_console(Console, "FPS ~w ~w", [get_average_fps(), Y]),
+    NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
     NodeOrientation = get_node_orientation(LPNode),
     CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
     Camera180Rotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}),
