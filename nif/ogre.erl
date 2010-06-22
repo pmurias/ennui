@@ -307,6 +307,42 @@ find_localplayer(Players,LocalPlayerID) ->
     [LocalPlayer] = lists:filter((fun(Player) -> ID = Player#player.id, ID == LocalPlayerID end), Players),
     LocalPlayer.
 
+
+get_all_positions(p0, Players, Enemies) ->
+    {
+    lists:map(fun(Player) ->
+            Body = Player#player.body,
+            Node = Player#player.node,
+            Position = bullet:btRigidBody_getCenterOfMassPosition(Body),
+            Orientation = get_node_orientation(Node),
+            {Position,Orientation}
+            end, Players)
+    ,
+    lists:map(fun(Enemy) ->
+            Body = Enemy#bully.body,
+            Node = Enemy#bully.node,
+            Position = bullet:btRigidBody_getCenterOfMassPosition(Body),
+            Orientation = get_node_orientation(Node),
+            {Position,Orientation}
+            end, Enemies)
+    };
+get_all_positions(_, _, _) ->  ignore.
+
+set_all_positions(Players, Enemies, {PlPos, EnPos}) ->
+    lists:foreach(fun({Player,{Position,Orientation}}) ->
+            Body = Player#player.body,
+            Node = Player#player.node,
+            set_node_position(Node, Position),
+            set_node_orientation(Node,Orientation)
+            end, lists:zip(Players,PlPos)),
+    lists:foreach(fun({Enemy,{Position,Orientation}}) ->
+            Body = Enemy#bully.body,
+            Node = Enemy#bully.node,
+            set_node_position(Node, Position),
+            set_node_orientation(Node,Orientation)
+            end, lists:zip(Enemies,EnPos)).
+
+
 play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletWorld) ->
     capture_input(),
     bullet:btDynamicsWorld_stepSimulation(BulletWorld),
@@ -314,7 +350,9 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
 
     {NewInputState,Input} = handle_input(InputState),
 
-    Sending = {frameDone,LocalPlayerID,Frame,Input},
+    OutPositions = get_all_positions(LocalPlayerID, Players, Enemies),
+
+    Sending = {frameDone,LocalPlayerID,Frame,Input,OutPositions},
     log("sending to clients ~w",[Sending]),
 
     send_to_clients(Clients,Sending),
@@ -322,7 +360,12 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
         ID = Player#player.id,
         log("waiting for player ~p ~p ~p",[ID,Frame,?VERSION]),
         receive 
-            {frameDone,ID,Frame,Input2} -> log("player ~p recieved ~p", [Player, Input2]),handle_player(Player,Input2)          
+            {frameDone,ID,Frame,Input2,InPositions} -> log("player ~p recieved ~p", [Player, Input2]),
+            case InPositions of
+                ignore -> ok;
+                _ -> set_all_positions(Players, Enemies, InPositions)
+            end,
+            handle_player(Player,Input2)
         after 2000 -> halt()
         end
     end,Players),
