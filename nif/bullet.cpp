@@ -89,8 +89,7 @@ static ERL_NIF_TERM new_btCollisionDispatcher(ErlNifEnv* env, int argc, const ER
 }
 static ERL_NIF_TERM new_btSequentialImpulseConstraintSolver(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 
-    btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
-    return wrap_pointer(env,btSequentialImpulseConstraintSolver_resource,solver);
+    return wrap_pointer(env,btSequentialImpulseConstraintSolver_resource,new btSequentialImpulseConstraintSolver());
 }
 static ERL_NIF_TERM new_btDiscreteDynamicsWorld(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 
@@ -257,6 +256,12 @@ static ERL_NIF_TERM btRigidBody_getLinearVelocity(ErlNifEnv* env, int argc, cons
     return vector_to_tuple(env, ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->getLinearVelocity());
 }
 
+static ERL_NIF_TERM btRigidBody_applyCentralImpulse(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    ((btRigidBody*)unwrap_pointer(env,btRigidBody_resource,argv[0]))->applyCentralImpulse(get_vector(env, argv[1]));
+    return enif_make_atom(env, "ok");
+}
+
+
 static ERL_NIF_TERM btIntToBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     int ptrInt;
     enif_get_int(env, argv[0], &ptrInt);
@@ -266,7 +271,7 @@ static ERL_NIF_TERM btIntToBody(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 
 static ErlNifFunc nif_funcs[] =
 {
-{"new_btDbvtBroadphase",0,new_btDbvtBroadphase},{"new_btDefaultCollisionConfiguration",0,new_btDefaultCollisionConfiguration},{"new_btCollisionDispatcher",0,new_btCollisionDispatcher},{"new_btSequentialImpulseConstraintSolver",0,new_btSequentialImpulseConstraintSolver},{"new_btDiscreteDynamicsWorld",4,new_btDiscreteDynamicsWorld},{"btDynamicsWorld_setGravity",2,btDynamicsWorld_setGravity},{"new_btBoxShape",1,new_btBoxShape},{"new_btSphereShape",1,new_btSphereShape},{"new_btCylinderShape",1,new_btCylinderShape},{"new_btDefaultMotionState",1,new_btDefaultMotionState},{"btCollisionShape_calculateLocalInertia",2,btCollisionShape_calculateLocalInertia},{"new_btRigidBodyConstructionInfo",4,new_btRigidBodyConstructionInfo},{"new_btRigidBody",1,new_btRigidBody},{"btRigidBody_setDamping",3,btRigidBody_setDamping},{"btRigidBody_setFriction",2,btRigidBody_setFriction},{"btDynamicsWorld_addRigidBody",2,btDynamicsWorld_addRigidBody},{"btDynamicsWorld_removeRigidBody",2,btDynamicsWorld_removeRigidBody},{"btRigidBody_getCenterOfMassPosition",1,btRigidBody_getCenterOfMassPosition},{"btRigidBody_getOrientation",1,btRigidBody_getOrientation},{"btRigidBody_translate",2,btRigidBody_translate},{"btRigidBody_setWorldTransform",2,btRigidBody_setWorldTransform},{"btRigidBody_setAngularFactor",2,btRigidBody_setAngularFactor},{"btRigidBody_setActivationState",2,btRigidBody_setActivationState},{"btDynamicsWorld_stepSimulation",1,btDynamicsWorld_stepSimulation},{"btIntToBody",1,btIntToBody},{"btRigidBody_setLinearVelocity",2,btRigidBody_setLinearVelocity},{"btRigidBody_getLinearVelocity",1,btRigidBody_getLinearVelocity}
+{"new_btDbvtBroadphase",0,new_btDbvtBroadphase},{"new_btDefaultCollisionConfiguration",0,new_btDefaultCollisionConfiguration},{"new_btCollisionDispatcher",0,new_btCollisionDispatcher},{"new_btSequentialImpulseConstraintSolver",0,new_btSequentialImpulseConstraintSolver},{"new_btDiscreteDynamicsWorld",4,new_btDiscreteDynamicsWorld},{"btDynamicsWorld_setGravity",2,btDynamicsWorld_setGravity},{"new_btBoxShape",1,new_btBoxShape},{"new_btSphereShape",1,new_btSphereShape},{"new_btCylinderShape",1,new_btCylinderShape},{"new_btDefaultMotionState",1,new_btDefaultMotionState},{"btCollisionShape_calculateLocalInertia",2,btCollisionShape_calculateLocalInertia},{"new_btRigidBodyConstructionInfo",4,new_btRigidBodyConstructionInfo},{"new_btRigidBody",1,new_btRigidBody},{"btRigidBody_setDamping",3,btRigidBody_setDamping},{"btRigidBody_setFriction",2,btRigidBody_setFriction},{"btDynamicsWorld_addRigidBody",2,btDynamicsWorld_addRigidBody},{"btDynamicsWorld_removeRigidBody",2,btDynamicsWorld_removeRigidBody},{"btRigidBody_getCenterOfMassPosition",1,btRigidBody_getCenterOfMassPosition},{"btRigidBody_getOrientation",1,btRigidBody_getOrientation},{"btRigidBody_translate",2,btRigidBody_translate},{"btRigidBody_setWorldTransform",2,btRigidBody_setWorldTransform},{"btRigidBody_setAngularFactor",2,btRigidBody_setAngularFactor},{"btRigidBody_setActivationState",2,btRigidBody_setActivationState},{"btDynamicsWorld_stepSimulation",1,btDynamicsWorld_stepSimulation},{"btIntToBody",1,btIntToBody},{"btRigidBody_setLinearVelocity",2,btRigidBody_setLinearVelocity},{"btRigidBody_getLinearVelocity",1,btRigidBody_getLinearVelocity},{"btRigidBody_applyCentralImpulse",2,btRigidBody_applyCentralImpulse}
 
 };
 

@@ -423,6 +423,19 @@ static ERL_NIF_TERM add_animationstate_time(ErlNifEnv* env, int argc, const ERL_
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM get_animationstate_time(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    AnimationState *as = (AnimationState *)unwrap_pointer(env,animationstate_resource,argv[0]);
+    return enif_make_double(env, as->getTimePosition());
+}
+
+static ERL_NIF_TERM set_animationstate_time(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    AnimationState *as = (AnimationState *)unwrap_pointer(env,animationstate_resource,argv[0]);
+    double time;
+    enif_get_double(env,argv[1], &time);
+    as->setTimePosition(time);
+    return enif_make_atom(env, "ok");
+}
+
 static ERL_NIF_TERM set_ambient_light(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     Vector3 c = get_vector(env, &argv[0]);
     sceneMgr->setAmbientLight(ColourValue(c.x,c.y,c.z));
@@ -582,6 +595,8 @@ static ErlNifFunc nif_funcs[] =
     {"set_animationstate_enabled", 2, set_animationstate_enabled},
     {"set_animationstate_loop", 2, set_animationstate_loop},
     {"add_animationstate_time", 2, add_animationstate_time},
+    {"get_animationstate_time", 1, get_animationstate_time},
+    {"set_animationstate_time", 2, set_animationstate_time},
     {"set_ambient_light", 1, set_ambient_light},
     {"attach_entity_to_bone", 3, attach_entity_to_bone},
     {"create_overlay", 1, create_overlay},

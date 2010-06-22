@@ -30,5 +30,6 @@ btRigidBody_setActivationState 2
 
 btRigidBody_getLinearVelocity 1
 btRigidBody_setLinearVelocity 2
+btRigidBody_applyCentralImpulse 2
 btDynamicsWorld_stepSimulation 1
 btIntToBody 1
