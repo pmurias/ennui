@@ -71,7 +71,7 @@ create_textbox(Panel,Id, X,Y, W, H, Colour, InitialText) ->
     set_overlay_element_width(TextBox, W),
     set_overlay_element_height(TextBox, H),
     set_overlay_element_parameter(TextBox, 'font_name', 'Liberation'),
-    set_overlay_element_parameter(TextBox, 'char_height', '16'),
+    set_overlay_element_parameter(TextBox, 'char_height', '30'),
     set_overlay_element_colour(TextBox, Colour),
     set_overlay_element_caption(TextBox, InitialText),
     add_overlay_container_child(Panel, TextBox),
@@ -141,8 +141,7 @@ play(ID, Clients, Players_) ->
 
     add_compositor('Bloom'),
     Panel = init_text_overlay(),
-    Con = create_console(Panel, 20),
-    create_textbox(Panel, 'ver', 10.0, 480.0, 500.0, 30.0, {1.0, 0.0, 0.0}, ?VERSION),
+    Con = create_console(Panel, 0),
 
     set_ambient_light({0.7, 0.7, 0.7}),
     GrassNode = create_scenenode(),
@@ -245,8 +244,9 @@ findClosestPlayer(Pos, Players) ->
     {_, Closest} = lists:foldl( fun(Player,{ClosestDist,ClosestPlayer}) ->
         PlayPos = get_node_position(Player#player.node),
         Dist = vec_length(vec_sub(Pos,PlayPos)),
+        HP = Player#player.hp,
         if
-            Dist < ClosestDist and (Player#player.hp > 0) ->
+            (Dist < ClosestDist) and (HP > 0) ->
                 {Dist,Player};
             true ->
                 {ClosestDist,ClosestPlayer}
@@ -548,7 +548,7 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
 
     LPNode = LocalPlayer#player.node,
     {X,Y,Z} = get_node_position(LPNode),
-    NewConsole = Console,
+    NewConsole = log_console(Console, "HP ~w", [LocalPlayer#player.hp]),
     NodeOrientation = get_node_orientation(LPNode),
     CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
     Camera180Rotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}),
