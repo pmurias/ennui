@@ -134,7 +134,7 @@ static ERL_NIF_TERM btDynamicsWorld_stepSimulation(ErlNifEnv* env, int argc, con
         env,
         btDynamicsWorld_resource,
         argv[0]
-    ))->stepSimulation(0.166667f, 0);
+    ))->stepSimulation(0.0166667f, 0);
     return enif_make_atom(env, "ok");
 }
 
