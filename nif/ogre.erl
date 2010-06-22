@@ -246,7 +246,7 @@ findClosestPlayer(Pos, Players) ->
         PlayPos = get_node_position(Player#player.node),
         Dist = vec_length(vec_sub(Pos,PlayPos)),
         if
-            Dist < ClosestDist ->
+            Dist < ClosestDist and (Player#player.hp > 0) ->
                 {Dist,Player};
             true ->
                 {ClosestDist,ClosestPlayer}
