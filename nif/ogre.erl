@@ -52,7 +52,7 @@ setup_world_physics(_) -> throw('nif library not loaded').
 add_compositor(_) -> throw('nif library not loaded').
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,attacks,node,entity,body}).
--record(bully,{node,entity,body}).
+-record(bully,{node,entity,body,covers,hp}).
 
 init_text_overlay() ->
     Overlay = create_overlay('ov1'),
@@ -127,7 +127,7 @@ create_enemy(Mesh, BulletWorld) ->
     bullet:btRigidBody_setAngularFactor(Body, {0.0, 1.0, 0.0}),
 
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, Body),
-    #bully{node=Node,entity=Entity,body=Body}.
+    #bully{node=Node,entity=Entity,body=Body,covers=false,hp=10}.
 
 play(ID, Clients, Players_) ->
     init_ogre(),
@@ -139,7 +139,7 @@ play(ID, Clients, Players_) ->
     BulletWorld = bullet:new_btDiscreteDynamicsWorld(ColDispatcher, Broadphase, ConstraintSolver, DCConfiguration),
 
 
-%    add_compositor('Bloom'),
+    add_compositor('Bloom'),
     Panel = init_text_overlay(),
     Con = create_console(Panel, 20),
     create_textbox(Panel, 'ver', 10.0, 480.0, 500.0, 30.0, {1.0, 0.0, 0.0}, ?VERSION),
@@ -234,25 +234,48 @@ enemy_logic(Enemy=#bully{}, Hits) ->
     RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
     RunAnimState = get_animationstate(Enemy#bully.entity, 'Run'),
     IdleAnimState = get_animationstate(Enemy#bully.entity, 'Idle'),
+    CoversAnimState = get_animationstate(Enemy#bully.entity, 'Cover'),
     Node = Enemy#bully.node,
     Body = Enemy#bully.body,
     CurrentVelocity = bullet:btRigidBody_getLinearVelocity(Body),
     Pos = get_node_position(Node),
+    case Enemy#bully.covers of
+        true ->
+            set_animationstate_enabled(IdleAnimState, 0),
+            set_animationstate_enabled(RunAnimState, 0),
+            set_animationstate_enabled(CoversAnimState, 1),
+            set_animationstate_loop(CoversAnimState, 0),
+            add_animationstate_time(CoversAnimState, 0.00666);
+        false ->
             set_animationstate_enabled(IdleAnimState, 1),
             set_animationstate_enabled(RunAnimState, 0),
-            add_animationstate_time(IdleAnimState, 0.00666),
+            set_animationstate_enabled(CoversAnimState,0 ),
+            add_animationstate_time(IdleAnimState, 0.00666)
+    end,
     bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
-    lists:foreach(fun ({player_attack, HitPos}) ->
+    GotHit = lists:foldl(fun ({player_attack, HitPos},GotHit) ->
         Dist = vec_length(vec_sub(HitPos, Pos)),
         if 
             Dist < 2.0 ->
                 Direction = vec_sub(Pos, HitPos), 
-                bullet:btRigidBody_applyCentralImpulse(Body, {vec_x(Direction)*200.0, 100.0, vec_z(Direction)*200.0});
+                case Enemy#bully.covers of 
+                    false -> bullet:btRigidBody_applyCentralImpulse(Body, {vec_x(Direction)*200.0, 100.0, vec_z(Direction)*200.0});
+                    true -> ok
+                end,
+                true;
             true ->
-                ok
+                GotHit
         end
-        end, Hits),
-    Enemy.
+        end, false, Hits),
+
+    case GotHit of
+        true ->
+            case Enemy#bully.hp of
+                1 -> Enemy#bully{covers=true};
+                _ -> Enemy#bully{hp=Enemy#bully.hp-1}
+            end;
+        false -> Enemy
+    end.
 
 
 player_logic(Player) ->
