@@ -222,10 +222,7 @@ enemy_logic(Enemy=#bully{}) ->
             set_animationstate_enabled(IdleAnimState, 1),
             set_animationstate_enabled(RunAnimState, 0),
             add_animationstate_time(IdleAnimState, 0.00666),
-    bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
-
-    {Bx,By,Bz} = bullet:btRigidBody_getCenterOfMassPosition(Body),
-    set_node_position(Node, {Bx,By-1.0,Bz}).
+    bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}).
 
 
 player_logic(Player) ->
@@ -262,9 +259,9 @@ player_logic(Player) ->
     case Player#player.rightDown of
         true -> rotate_node(Player#player.node,RightRotation);
         false -> ok
-    end,
-    {Bx,By,Bz} = bullet:btRigidBody_getCenterOfMassPosition(Body),
-    set_node_position(Node, {Bx,By-1.0,Bz}).
+    end.
+
+
 
 vec_x({V,_,_}) -> V.
 vec_y({_,V,_}) -> V.
@@ -332,13 +329,13 @@ set_all_positions(Players, Enemies, {PlPos, EnPos}) ->
     lists:foreach(fun({Player,{Position,Orientation}}) ->
             Body = Player#player.body,
             Node = Player#player.node,
-            set_node_position(Node, Position),
+            set_node_position(Node, vec_sub(Position,{0.0,1.0,0.0})),
             set_node_orientation(Node,Orientation)
             end, lists:zip(Players,PlPos)),
     lists:foreach(fun({Enemy,{Position,Orientation}}) ->
             Body = Enemy#bully.body,
             Node = Enemy#bully.node,
-            set_node_position(Node, Position),
+            set_node_position(Node, vec_sub(Position,{0.0,1.0,0.0})),
             set_node_orientation(Node,Orientation)
             end, lists:zip(Enemies,EnPos)).
 
