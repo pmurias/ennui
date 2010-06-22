@@ -383,7 +383,7 @@ player_logic(Player, EnemyHits) ->
                             set_animationstate_enabled(RunAnimState, 1),
                             set_animationstate_enabled(CoversAnimState, 0),
                             set_animationstate_enabled(Melee1AnimState, 0),
-                            add_animationstate_time(RunAnimState, 0.01666);
+                            add_animationstate_time(RunAnimState, 0.04666);
                         false ->
                             bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
                             bullet:btRigidBody_setFriction(Body, 1.0),
@@ -391,7 +391,7 @@ player_logic(Player, EnemyHits) ->
                             set_animationstate_enabled(RunAnimState, 0),
                             set_animationstate_enabled(CoversAnimState, 0),
                             set_animationstate_enabled(Melee1AnimState, 0),
-                            add_animationstate_time(IdleAnimState, 0.00666),
+                            add_animationstate_time(IdleAnimState, 0.02666),
                             ok
                     end
             end,
