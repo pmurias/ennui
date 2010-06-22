@@ -1,4 +1,4 @@
-all: ogre.beam ogre.so bullet.so bullet.erl
+all: bullet.erl ogre.beam ogre.so bullet.so 
 ogre.beam: ogre.erl
 	erlc `perl checksum` ogre.erl bullet.erl
 ogre.so:  ogre.cpp

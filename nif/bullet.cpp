@@ -89,7 +89,8 @@ static ERL_NIF_TERM new_btCollisionDispatcher(ErlNifEnv* env, int argc, const ER
 }
 static ERL_NIF_TERM new_btSequentialImpulseConstraintSolver(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 
-    return wrap_pointer(env,btSequentialImpulseConstraintSolver_resource,new btSequentialImpulseConstraintSolver());
+    btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
+    return wrap_pointer(env,btSequentialImpulseConstraintSolver_resource,solver);
 }
 static ERL_NIF_TERM new_btDiscreteDynamicsWorld(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 
