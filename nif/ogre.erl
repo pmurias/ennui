@@ -507,12 +507,10 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
     OutPositions = get_all_positions(LocalPlayerID, Players, Enemies),
 
     Sending = {frameDone,LocalPlayerID,Frame,Input,OutPositions},
-    log("sending to clients ~w",[Sending]),
 
     send_to_clients(Clients,Sending),
     NewPlayers = lists:map(fun (Player) ->
         ID = Player#player.id,
-        log("waiting for player ~p ~p ~p",[ID,Frame,?VERSION]),
         receive 
             {frameDone,ID,Frame,Input2,InPositions} -> log("player ~p recieved ~p", [Player, Input2]),
             case InPositions of
@@ -542,7 +540,7 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
 
     LPNode = LocalPlayer#player.node,
     {X,Y,Z} = get_node_position(LPNode),
-    NewConsole = log_console(Console, "FPS ~w", [get_average_fps()]),
+    NewConsole = Console,
     NodeOrientation = get_node_orientation(LPNode),
     CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
     Camera180Rotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}),
