@@ -50,6 +50,7 @@ setup_world_physics(_) -> throw('nif library not loaded').
 add_compositor(_) -> throw('nif library not loaded').
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,node,entity,body}).
+-record(bully,{node,entity,body}).
 
 init_text_overlay() ->
     Overlay = create_overlay('ov1'),
@@ -107,6 +108,25 @@ create_player(ID, Mesh, BulletWorld) ->
     set_node_position(Node,{0.0,0.0,0.0}),
     #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,node=Node,entity=Entity,body=Body}.
 
+create_enemy(Mesh, BulletWorld) ->
+    Node = create_scenenode(),
+    Entity=create_entity(Mesh),
+    attach_entity_to_node(Entity,Node),
+
+    ColShape = bullet:new_btCylinderShape({0.6, 0.8, 0.0}),
+    MotionState = bullet:new_btDefaultMotionState({{0.0,0.0,0.0,1.0}, {0.0,20.0,0.0}}),
+    Mass = 20.0,
+    Inertia = bullet:btCollisionShape_calculateLocalInertia(ColShape, Mass),
+    BodyCI = bullet:new_btRigidBodyConstructionInfo(Mass, MotionState, ColShape, Inertia),
+    Body = bullet:new_btRigidBody(BodyCI),
+
+    bullet:btRigidBody_translate(Body, {0,5.0, 0}),
+    bullet:btRigidBody_setActivationState(Body, 4), % disable deavtivation
+    bullet:btRigidBody_setAngularFactor(Body, {0.0, 1.0, 0.0}),
+
+    bullet:btDynamicsWorld_addRigidBody(BulletWorld, Body),
+    #bully{node=Node,entity=Entity,body=Body}.
+
 play(ID, Clients, Players_) ->
     init_ogre(),
 
@@ -135,10 +155,12 @@ play(ID, Clients, Players_) ->
     WorldBody = bullet:btIntToBody(WorldBodyInt),
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, WorldBody),
 
+    Enemies = [ create_enemy('Bully.mesh', BulletWorld) ],
+
     Players = lists:map(
-        fun (p0) -> create_player(p0, 'Bully.mesh',BulletWorld);
+        fun (p0) -> create_player(p0, 'Policeman.mesh',BulletWorld);
             (p1) -> create_player(p1, 'Blackman.mesh',BulletWorld) end,Players_),
-    play_loop(1,ID, Players, {false,false,false,false}, [self()|Clients], Con, BulletWorld),
+    play_loop(1,ID, Players, Enemies, {false,false,false,false}, [self()|Clients], Con, BulletWorld),
     destroy_ogre().
 
 -define(KC_ESCAPE,1).
@@ -186,8 +208,27 @@ handle_player(Player,Input) ->
         Player,Input
     ).
 
+enemy_logic(Enemy=#bully{}) ->
+    Speed = 3.0,
+    LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
+    RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
+    RunAnimState = get_animationstate(Enemy#bully.entity, 'Run'),
+    IdleAnimState = get_animationstate(Enemy#bully.entity, 'Idle'),
+    Node = Enemy#bully.node,
+    Body = Enemy#bully.body,
+    CurrentVelocity = bullet:btRigidBody_getLinearVelocity(Body),
+    Pos = get_node_position(Node),
+
+            set_animationstate_enabled(IdleAnimState, 1),
+            set_animationstate_enabled(RunAnimState, 0),
+            add_animationstate_time(IdleAnimState, 0.00666),
+    bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
+
+    {Bx,By,Bz} = bullet:btRigidBody_getCenterOfMassPosition(Body),
+    set_node_position(Node, {Bx,By-1.0,Bz}).
+
 player_logic(Player) ->
-    Speed = 10.0,
+    Speed = 5.0,
     LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
     RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
     RunAnimState = get_animationstate(Player#player.entity, 'Run'),
@@ -261,7 +302,7 @@ find_localplayer(Players,LocalPlayerID) ->
     [LocalPlayer] = lists:filter((fun(Player) -> ID = Player#player.id, ID == LocalPlayerID end), Players),
     LocalPlayer.
 
-play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console,BulletWorld) ->
+play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletWorld) ->
     capture_input(),
     bullet:btDynamicsWorld_stepSimulation(BulletWorld),
     render_frame(),
@@ -281,8 +322,10 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console,BulletWorld) ->
         end
     end,Players),
 
+    NewEnemies = Enemies,
 
     lists:foreach(fun player_logic/1,NewPlayers),
+    lists:foreach(fun enemy_logic/1,NewEnemies),
     LocalPlayer = find_localplayer(NewPlayers,LocalPlayerID),
 
 
@@ -302,7 +345,7 @@ play_loop(Frame,LocalPlayerID,Players,InputState,Clients,Console,BulletWorld) ->
     Esc = key_down(?KC_ESCAPE),
     case Esc of
         false -> 
-            play_loop(Frame+1,LocalPlayerID,NewPlayers,NewInputState,Clients,NewConsole,BulletWorld);
+            play_loop(Frame+1,LocalPlayerID,NewPlayers,NewEnemies,NewInputState,Clients,NewConsole,BulletWorld);
         true -> halt
     end.
 

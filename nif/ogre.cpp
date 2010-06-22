@@ -251,7 +251,7 @@ static ERL_NIF_TERM init_ogre(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     camera->setNearClipDistance(0.1);
     camera->setFarClipDistance(1000);
     viewPort->setBackgroundColour(ColourValue(0.3,0.6,1.0));
-    sceneMgr->setFog(FOG_LINEAR, ColourValue(0.3, 0.6, 1.0), 0.0, 40.0, 100);
+ //   sceneMgr->setFog(FOG_LINEAR, ColourValue(0.3, 0.6, 1.0), 0.0, 40.0, 100);
     camera->setAspectRatio(4.0/3.0);
     sceneMgr->setShadowTechnique(SHADOWTYPE_STENCIL_ADDITIVE);
 
