@@ -1,0 +1,18 @@
+#!/usr/bin/perl
+use v5.10;
+my @funcs;
+while (<>) {
+    next if /^\s*$/;
+    push(@funcs,[split(/ /,$_)]);
+}
+say '-module(bullet).';
+say '-export([';
+say join(',',map {$_->[0].'/'.$_->[1]} @funcs);
+say ']).';
+say '-on_load(load_c_module/0).';
+say 'load_c_module() ->';
+say '     erlang:load_nif("./bullet", 0).';
+for (@funcs) {
+    say $_->[0],"(",join(',',map {"_"} (1..$_->[1])),") -> throw('nif library not loaded')."
+}
+
