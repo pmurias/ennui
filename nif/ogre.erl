@@ -372,7 +372,7 @@ player_logic(Player, EnemyHits) ->
                     set_animationstate_enabled(RunAnimState, 0),
                     set_animationstate_enabled(CoversAnimState, 0),
                     set_animationstate_enabled(Melee1AnimState, 1),
-                    add_animationstate_time(Melee1AnimState, 0.01666);
+                    add_animationstate_time(Melee1AnimState, 0.04666);
                 false -> 
                     case Player#player.upDown of
                         true -> 
@@ -407,7 +407,7 @@ player_logic(Player, EnemyHits) ->
                 true ->
                     AnimTime = get_animationstate_time(Melee1AnimState),
                     if
-                        AnimTime > 0.43 ->
+                        AnimTime > 1.03 ->
                             set_animationstate_time(Melee1AnimState, 0.0),
                             { Player#player{attacks=false}, {player_attack, Pos} };
                         true ->
