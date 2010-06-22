@@ -158,11 +158,19 @@ play(ID, Clients, Players_) ->
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, WorldBody),
 
     Enemies = [ 
-        create_enemy('Bully.mesh', BulletWorld, [], {10.0, 5.0, 10.0} ) 
+        create_enemy('Bully.mesh', BulletWorld, [], {20.0, 5.0, 10.0} ) 
         ,
-        create_enemy('Bully.mesh', BulletWorld, [], {5.0, 5.0, 10.0} ) 
+        create_enemy('Bully.mesh', BulletWorld, [], {15.0, 5.0, 10.0} ) 
         ,
-        create_enemy('Bully.mesh', BulletWorld, [], {3.0, 5.0, 10.0} ) 
+        create_enemy('Bully2.mesh', BulletWorld, [], {-15.0, 5.0, 10.0} ) 
+        ,
+        create_enemy('Bully.mesh', BulletWorld, [], {15.0, 5.0, 10.0} ) 
+        ,
+        create_enemy('Bully2.mesh', BulletWorld, [], {20.0, 5.0, 5.0} ) 
+        ,
+        create_enemy('Bully.mesh', BulletWorld, [], {0.0, 5.0, 15.0} ) 
+        ,
+        create_enemy('Bully2.mesh', BulletWorld, [], {3.0, 5.0, -15.0} ) 
         ],
 
     Players = lists:map(
