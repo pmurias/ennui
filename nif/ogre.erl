@@ -108,7 +108,7 @@ create_player(ID, Mesh, BulletWorld) ->
 
 
     set_node_position(Node,{0.0,0.0,0.0}),
-    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,attacks=false,node=Node,entity=Entity,body=Body,hp=120}.
+    #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,attacks=false,node=Node,entity=Entity,body=Body,hp=320}.
 
 create_enemy(Mesh, BulletWorld, Idle, StartPos) ->
     Node = create_scenenode(),
@@ -372,6 +372,7 @@ player_logic(Player, EnemyHits) ->
             set_animationstate_enabled(Melee1AnimState, 0),
             set_animationstate_loop(CoversAnimState, 0),
             add_animationstate_time(CoversAnimState, 0.01666),
+            bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
             { Player, ignore };
         true ->        
             case Player#player.attacks of
