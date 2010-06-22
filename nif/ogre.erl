@@ -52,7 +52,7 @@ setup_world_physics(_) -> throw('nif library not loaded').
 add_compositor(_) -> throw('nif library not loaded').
 
 -record(player,{id,leftDown,rightDown,upDown,downDown,attacks,node,entity,body}).
--record(bully,{node,entity,body,covers,hp}).
+-record(bully,{node,entity,body,covers,hp,actions,idle}).
 
 init_text_overlay() ->
     Overlay = create_overlay('ov1'),
@@ -110,7 +110,7 @@ create_player(ID, Mesh, BulletWorld) ->
     set_node_position(Node,{0.0,0.0,0.0}),
     #player{id=ID,leftDown=false,rightDown=false,upDown=false,downDown=false,attacks=false,node=Node,entity=Entity,body=Body}.
 
-create_enemy(Mesh, BulletWorld) ->
+create_enemy(Mesh, BulletWorld, Idle) ->
     Node = create_scenenode(),
     Entity=create_entity(Mesh),
     attach_entity_to_node(Entity,Node),
@@ -127,7 +127,7 @@ create_enemy(Mesh, BulletWorld) ->
     bullet:btRigidBody_setAngularFactor(Body, {0.0, 1.0, 0.0}),
 
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, Body),
-    #bully{node=Node,entity=Entity,body=Body,covers=false,hp=10}.
+    #bully{node=Node,entity=Entity,body=Body,covers=false,hp=10,actions=[],idle=Idle}.
 
 play(ID, Clients, Players_) ->
     init_ogre(),
@@ -157,7 +157,7 @@ play(ID, Clients, Players_) ->
     WorldBody = bullet:btIntToBody(WorldBodyInt),
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, WorldBody),
 
-    Enemies = [ create_enemy('Bully.mesh', BulletWorld) ],
+    Enemies = [ create_enemy('Bully.mesh', BulletWorld, []) ],
 
     Players = lists:map(
         fun (p0) -> create_player(p0, 'Policeman.mesh',BulletWorld);
@@ -208,7 +208,7 @@ handle_input({OldLeft,OldRight,OldUp,OldDown,OldAttack}) ->
 send_to_clients(Clients,Event) -> lists:foreach((fun(Client)->Client ! Event end), Clients).
 
 handle_player(Player,Input) ->
-    Player0 = lists:foldl(fun
+    lists:foldl(fun
         ({keyChange,?KC_LEFT,State},P)  -> P#player{leftDown=State};
         ({keyChange,?KC_RIGHT,State},P) -> P#player{rightDown=State};
         ({keyChange,?KC_DOWN,State},P)  -> P#player{downDown=State};
@@ -227,39 +227,92 @@ handle_player(Player,Input) ->
     ).
 
    
+findClosestPlayer(Pos, Players) ->
+    {_, Closest} = lists:foldl( fun(Player,{ClosestDist,ClosestPlayer}) ->
+        PlayPos = get_node_position(Player#player.node),
+        Dist = vec_length(vec_sub(Pos,PlayPos)),
+        if
+            Dist < ClosestDist ->
+                {Dist,Player};
+            true ->
+                {ClosestDist,ClosestPlayer}
+        end end, {20.0, too_far}, Players ),
+    Closest.
 
-enemy_logic(Enemy=#bully{}, Hits) ->
+
+enemy_logic(Enemy=#bully{}, Hits, Players) ->
     Speed = 3.0,
-    LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
-    RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
+    %LeftRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.04, 0.0, 1.0}),
+    %RightRotation = get_rotation_to({0.0, 0.0, 1.0}, {-0.04, 0.0, 1.0}),
     RunAnimState = get_animationstate(Enemy#bully.entity, 'Run'),
     IdleAnimState = get_animationstate(Enemy#bully.entity, 'Idle'),
+    FuryAnimState = get_animationstate(Enemy#bully.entity, 'Fury'),
     CoversAnimState = get_animationstate(Enemy#bully.entity, 'Cover'),
     Node = Enemy#bully.node,
     Body = Enemy#bully.body,
     CurrentVelocity = bullet:btRigidBody_getLinearVelocity(Body),
     Pos = get_node_position(Node),
-    case Enemy#bully.covers of
+    NewActions = case Enemy#bully.covers of
         true ->
             set_animationstate_enabled(IdleAnimState, 0),
             set_animationstate_enabled(RunAnimState, 0),
+            set_animationstate_enabled(FuryAnimState, 0),
             set_animationstate_enabled(CoversAnimState, 1),
             set_animationstate_loop(CoversAnimState, 0),
-            add_animationstate_time(CoversAnimState, 0.00666);
+            bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
+            add_animationstate_time(CoversAnimState, 0.00666),
+            [];
         false ->
             set_animationstate_enabled(IdleAnimState, 1),
             set_animationstate_enabled(RunAnimState, 0),
+            set_animationstate_enabled(FuryAnimState, 0),
             set_animationstate_enabled(CoversAnimState,0 ),
-            add_animationstate_time(IdleAnimState, 0.00666)
+            add_animationstate_time(IdleAnimState, 0.01666),
+            case Enemy#bully.actions of 
+                [] ->
+                    Closest = findClosestPlayer(Pos,Players),
+                    case Closest of
+                        too_far -> Enemy#bully.idle;
+                        Player ->
+                            [{go,get_node_position(Player#player.node)},{attack,90}]
+                    end;
+                [{go,Destination}|Rest]->
+                    Direction = vec_sub(Destination,Pos),
+                    Dist = vec_length(Direction),
+                    if
+                        Dist < 0.5 ->
+                            Rest;
+                        true ->
+                            set_animationstate_enabled(IdleAnimState, 0),
+                            set_animationstate_enabled(RunAnimState, 1),
+                            set_animationstate_enabled(FuryAnimState, 0),
+                            set_animationstate_enabled(CoversAnimState,0 ),
+                            add_animationstate_time(RunAnimState, 0.01666),
+                            DesiredVelocity = vec_mult_scalar(vec_normalize(Direction),Speed),
+                            bullet:btRigidBody_setLinearVelocity(Body, {vec_x(DesiredVelocity), vec_y(CurrentVelocity) - 0.41, vec_z(DesiredVelocity)}),
+                            [{go,Destination}|Rest]
+                    end;
+                [{attack,Frames}|Rest] ->
+                    case Frames of
+                        1 ->
+                            Rest;
+                        _ ->
+                            set_animationstate_enabled(IdleAnimState, 0),
+                            set_animationstate_enabled(RunAnimState, 0),
+                            set_animationstate_enabled(FuryAnimState, 1),
+                            set_animationstate_enabled(CoversAnimState,0 ),
+                            add_animationstate_time(FuryAnimState, 0.01666),
+                            [{attack,Frames-1}|Rest]
+                    end
+            end
     end,
-    bullet:btRigidBody_setLinearVelocity(Body, {0.0, vec_y(CurrentVelocity) - 0.41, 0.0}),
     GotHit = lists:foldl(fun ({player_attack, HitPos},GotHit) ->
-        Dist = vec_length(vec_sub(HitPos, Pos)),
+        Dist2 = vec_length(vec_sub(HitPos, Pos)),
         if 
-            Dist < 2.0 ->
-                Direction = vec_sub(Pos, HitPos), 
+            Dist2 < 2.0 ->
+                Direction2 = vec_sub(Pos, HitPos), 
                 case Enemy#bully.covers of 
-                    false -> bullet:btRigidBody_applyCentralImpulse(Body, {vec_x(Direction)*200.0, 100.0, vec_z(Direction)*200.0});
+                    false -> bullet:btRigidBody_applyCentralImpulse(Body, {vec_x(Direction2)*200.0, 100.0, vec_z(Direction2)*200.0});
                     true -> ok
                 end,
                 true;
@@ -268,14 +321,15 @@ enemy_logic(Enemy=#bully{}, Hits) ->
         end
         end, false, Hits),
 
-    case GotHit of
+    Enemy0 = case GotHit of
         true ->
             case Enemy#bully.hp of
                 1 -> Enemy#bully{covers=true};
                 _ -> Enemy#bully{hp=Enemy#bully.hp-1}
             end;
         false -> Enemy
-    end.
+    end,
+    Enemy0#bully{actions=NewActions}.
 
 
 player_logic(Player) ->
@@ -345,6 +399,12 @@ vec_x({V,_,_}) -> V.
 vec_y({_,V,_}) -> V.
 vec_z({_,_,V}) -> V.
 
+vec_normalize({X,Y,Z}) ->
+    Len = vec_length({X,Y,Z}),
+    {X/Len,Y/Len,Z/Len}.
+
+vec_mult_scalar({X,Y,Z},S) -> {X*S,Y*S,Z*S}.
+
 vec_cross_product({X1,Y1,Z1}, {X2,Y2,Z2}) ->
     {Y1 * Z2 - Z1 * Y2, 
     Z1 * X2 - X1 * Z2, 
@@ -367,11 +427,6 @@ vec_sub({X1,Y1,Z1},{X2,Y2,Z2}) -> {X1-X2,Y1-Y2,Z1-Z2}.
 vec_add({X1,Y1,Z1},{X2,Y2,Z2}) -> {X1+X2,Y1+Y2,Z1+Z2}.
 vec_length({X,Y,Z}) -> math:sqrt(X*X + Y*Y + Z*Z).
 
-move_node(Node,By) ->
-    {X,Y,Z} = get_node_position(Node),
-    Orientation = get_node_orientation(Node),
-    {ByX, ByY, ByZ} = vec_mult_quat(By, Orientation),
-    set_node_position(Node,{X + ByX,Y+ByY,Z+ByZ}).
 
 rotate_node(Node, By) ->
     CurrentOrientation = get_node_orientation(Node),
@@ -405,15 +460,13 @@ get_all_positions(_, _, _) ->  ignore.
 
 set_all_positions(Players, Enemies, {PlPos, EnPos}) ->
     lists:foreach(fun({Player,{Position,Orientation}}) ->
-            Body = Player#player.body,
             Node = Player#player.node,
             set_node_position(Node, vec_sub(Position,{0.0,1.0,0.0})),
             set_node_orientation(Node,Orientation)
             end, lists:zip(Players,PlPos)),
     lists:foreach(fun({Enemy,{Position,Orientation}}) ->
-            Body = Enemy#bully.body,
             Node = Enemy#bully.node,
-            set_node_position(Node, vec_sub(Position,{0.0,1.0,0.0})),
+            set_node_position(Node, vec_sub(Position,{0.0,0.9,0.0})),
             set_node_orientation(Node,Orientation)
             end, lists:zip(Enemies,EnPos)).
 
@@ -453,7 +506,7 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
             _ -> true
         end end, Hits),
     
-    NewEnemies = lists:map(fun (Enemy) -> enemy_logic(Enemy,RealHits) end,Enemies),
+    NewEnemies = lists:map(fun (Enemy) -> enemy_logic(Enemy,RealHits,NewPlayers2) end,Enemies),
     LocalPlayer = find_localplayer(NewPlayers2,LocalPlayerID),
 
 
