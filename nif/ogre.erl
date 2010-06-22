@@ -247,7 +247,7 @@ enemy_logic(Enemy=#bully{}, Hits) ->
         if 
             Dist < 2.0 ->
                 Direction = vec_sub(Pos, HitPos), 
-                bullet:btRigidBody_applyCentralImpulse(Body, {vec_x(Direction)*1000.0, 300.0, vec_z(Direction)*1000.0});
+                bullet:btRigidBody_applyCentralImpulse(Body, {vec_x(Direction)*200.0, 100.0, vec_z(Direction)*200.0});
             true ->
                 ok
         end
