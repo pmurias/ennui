@@ -344,6 +344,11 @@ static ERL_NIF_TERM set_camera_position(ErlNifEnv* env, int argc, const ERL_NIF_
     return enif_make_atom(env,"ok");
 }
 
+static ERL_NIF_TERM set_camera_lookat(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    camera->lookAt(get_vector(env, &argv[0]));
+    return enif_make_atom(env,"ok");
+}
+
 static ERL_NIF_TERM set_node_orientation(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     SceneNode *node = (SceneNode *)unwrap_pointer(env,node_resource,argv[0]);
     node->setOrientation(get_quaternion(env, &argv[1]));
@@ -586,6 +591,7 @@ static ErlNifFunc nif_funcs[] =
     {"get_average_fps", 0, get_average_fps},
     {"log_message", 1, log_message},
     {"set_camera_position", 1, set_camera_position},
+    {"set_camera_lookat", 1, set_camera_lookat},
     {"set_camera_orientation", 1, set_camera_orientation},
     {"get_camera_position", 0, get_camera_position},
     {"get_camera_orientation", 0, get_camera_orientation},

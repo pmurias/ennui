@@ -1,6 +1,6 @@
 -module(ogre).
 -import(bullet).
--export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,get_animationstate_time/1,set_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,add_compositor/1,setup_world_physics/1,play/3]).
+-export([init_ogre/0,destroy_ogre/0,render_frame/0,key_down/1,capture_input/0,create_scenenode/0,create_entity/1,set_node_position/2,set_node_orientation/2,get_node_position/1,get_node_orientation/1,get_average_fps/0,log_message/1,set_camera_position/1,set_camera_lookat/1,set_camera_orientation/1,get_camera_position/0,get_camera_orientation/0,get_rotation_to/2,get_quaternion_inverse/1,get_animationstate/2,set_animationstate_enabled/2,set_animationstate_loop/2,add_animationstate_time/2,get_animationstate_time/1,set_animationstate_time/2,set_ambient_light/1,attach_entity_to_bone/3,create_overlay/1,create_overlay_container/2,set_overlay_container_dimensions/3,set_overlay_container_position/3,set_overlay_element_colour/2,add_overlay_container/2,show_overlay/1,set_overlay_element_height/2,set_overlay_element_width/2,set_overlay_element_parameter/3,set_overlay_element_caption/2,add_overlay_container_child/2,set_overlay_element_fontname/2,set_overlay_element_metrics_mode/2,add_compositor/1,setup_world_physics/1,play/3]).
 
 -on_load(load_c_module/0).
 load_c_module() ->
@@ -21,6 +21,7 @@ get_node_orientation(_) -> throw('nif library not loaded').
 get_average_fps() -> throw('nif library not loaded').
 log_message(_) -> throw('nif library not loaded').
 set_camera_position(_) -> throw('nif library not loaded').
+set_camera_lookat(_) -> throw('nif library not loaded').
 set_camera_orientation(_) -> throw('nif library not loaded').
 get_camera_position() -> throw('nif library not loaded').
 get_camera_orientation() -> throw('nif library not loaded').
@@ -117,7 +118,7 @@ create_enemy(Mesh, BulletWorld, Idle, StartPos) ->
 
     ColShape = bullet:new_btCylinderShape({0.6, 0.8, 0.0}),
     MotionState = bullet:new_btDefaultMotionState({{0.0,0.0,0.0,1.0}, {0.0,0.0,0.0}}),
-    Mass = 20.0,
+    Mass = 30.0,
     Inertia = bullet:btCollisionShape_calculateLocalInertia(ColShape, Mass),
     BodyCI = bullet:new_btRigidBodyConstructionInfo(Mass, MotionState, ColShape, Inertia),
     Body = bullet:new_btRigidBody(BodyCI),
@@ -362,7 +363,7 @@ player_logic(Player, EnemyHits) ->
     Pos = get_node_position(Node),
     HitCount = length(lists:filter(fun(Hit) ->
         HitDist = vec_length(vec_sub(Pos,Hit)),
-        HitDist < 2.0 end, EnemyHits)),
+        (HitDist < 1.0) end, EnemyHits)),
 
     if 
         Player#player.hp < 0 ->
@@ -418,7 +419,7 @@ player_logic(Player, EnemyHits) ->
                     if
                         AnimTime > 1.03 ->
                             set_animationstate_time(Melee1AnimState, 0.0),
-                            { Player#player{attacks=false}, {player_attack, Pos} };
+                            { Player#player{attacks=false}, {player_attack, vec_add(Pos, vec_mult_quat({0.0,0.0,1.0}, get_node_orientation(Node)))} };
                         true ->
                             { Player, ignore }
                     end;
@@ -443,6 +444,8 @@ vec_cross_product({X1,Y1,Z1}, {X2,Y2,Z2}) ->
     {Y1 * Z2 - Z1 * Y2, 
     Z1 * X2 - X1 * Z2, 
     X1 * Y2 - Y1 * X2}.
+
+quat_yaw({W,X,Y,Z}) -> math:asin(-2.0*(X*Z - W*Y)).
 
 vec_mult_quat({VX,VY,VZ}, {QW,QX,QY,QZ}) ->
     {UVx, UVy, UVz} = vec_cross_product({QX,QY,QZ}, {VX,VY,VZ}),
@@ -548,15 +551,19 @@ play_loop(Frame,LocalPlayerID,Players,Enemies,InputState,Clients,Console,BulletW
 
 
     LPNode = LocalPlayer#player.node,
-    {X,Y,Z} = get_node_position(LPNode),
+    NodePos = get_node_position(LPNode),
     NewConsole = log_console(Console, "HP ~w", [LocalPlayer#player.hp]),
     NodeOrientation = get_node_orientation(LPNode),
     CameraDownRotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.4, 2.0}),
     Camera180Rotation = get_rotation_to({0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}),
     CameraOrientation = quat_mult_quat(quat_mult_quat(NodeOrientation, Camera180Rotation), CameraDownRotation),
     set_camera_orientation(CameraOrientation),
-    {CamMovementX, CamMovementY, CamMovementZ} = vec_mult_quat({0.0, 0.0, -6.0}, NodeOrientation),
-    set_camera_position({X+CamMovementX,Y+CamMovementY+3.2,Z+CamMovementZ}),
+    CamPos0 = vec_mult_quat({0.0, 0.0, -6.0}, NodeOrientation),
+    DesiredCamPos = vec_add(CamPos0, vec_add(NodePos, {0.0, 3.2, 0.0})),
+    CurrentPos = get_camera_position(),
+    
+    set_camera_position(vec_add(CurrentPos, vec_mult_scalar(vec_sub(DesiredCamPos, CurrentPos), 0.1))),
+    set_camera_lookat(vec_add(NodePos, {0.0,1.0,0.0})),
 
 %    NewConsole = log_console(Console, "FPS: ~p (~p,~p,~p)", [get_average_fps(),X,Y,Z]),
 
