@@ -128,7 +128,7 @@ create_enemy(Mesh, BulletWorld, Idle, StartPos) ->
     bullet:btRigidBody_setAngularFactor(Body, {0.0, 1.0, 0.0}),
 
     bullet:btDynamicsWorld_addRigidBody(BulletWorld, Body),
-    #bully{node=Node,entity=Entity,body=Body,covers=false,hp=10,actions=[],idle=Idle}.
+    #bully{node=Node,entity=Entity,body=Body,covers=false,hp=6,actions=[],idle=Idle}.
 
 play(ID, Clients, Players_) ->
     init_ogre(),
