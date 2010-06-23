@@ -326,7 +326,7 @@ enemy_logic(Enemy=#bully{}, Hits, Players) ->
     GotHit = lists:foldl(fun ({player_attack, HitPos},GotHit) ->
         Dist2 = vec_length(vec_sub(HitPos, Pos)),
         if 
-            Dist2 < 2.0 ->
+            Dist2 < 1.0 ->
                 Direction2 = vec_sub(Pos, HitPos), 
                 case Enemy#bully.covers of 
                     false -> bullet:btRigidBody_applyCentralImpulse(Body, {vec_x(Direction2)*200.0, 100.0, vec_z(Direction2)*200.0});
@@ -363,7 +363,7 @@ player_logic(Player, EnemyHits) ->
     Pos = get_node_position(Node),
     HitCount = length(lists:filter(fun(Hit) ->
         HitDist = vec_length(vec_sub(Pos,Hit)),
-        (HitDist < 1.0) end, EnemyHits)),
+        (HitDist < 1.5) end, EnemyHits)),
 
     if 
         Player#player.hp < 0 ->
